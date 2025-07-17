@@ -2,160 +2,75 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AVODA Wallet</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AVODA Wallet Generator</title>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #0f172a;
-      color: #cbd5e1;
+      font-family: 'Segoe UI', sans-serif;
+      background: #111;
+      color: #00ffaa;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
-      min-height: 100vh;
+      justify-content: center;
+      height: 100vh;
       margin: 0;
-      padding: 20px;
-    }
-    .wallet-card {
-      background: #1e293b;
-      padding: 30px;
-      border-radius: 16px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-      max-width: 460px;
-      width: 100%;
-      text-align: center;
     }
     h1 {
-      color: #38bdf8;
-      margin-bottom: 10px;
+      font-size: 2em;
+      margin-bottom: 1em;
+      color: #ffffff;
+    }
+    .wallet-box {
+      background-color: #222;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px #00ffaa55;
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
     }
     button {
-      background-color: #3b82f6;
+      padding: 10px 20px;
+      font-size: 1rem;
+      background: #00ffaa;
       border: none;
-      padding: 12px 25px;
-      color: white;
-      font-weight: 700;
-      font-size: 16px;
-      border-radius: 10px;
+      color: #111;
+      border-radius: 8px;
       cursor: pointer;
-      margin-top: 20px;
-      transition: background-color 0.3s ease;
+      margin-top: 15px;
     }
     button:hover {
-      background-color: #2563eb;
+      background: #00cc88;
     }
-    .key-container {
+    #walletAddress {
       margin-top: 20px;
-      text-align: left;
-      background: #0f172a;
-      border-radius: 10px;
-      padding: 15px;
-      word-break: break-word;
-      font-family: monospace;
-      font-size: 14px;
-      color: #e0e7ff;
-      position: relative;
-    }
-    .key-label {
-      font-weight: 700;
-      color: #60a5fa;
-      margin-bottom: 5px;
-    }
-    .copy-btn {
-      background-color: #10b981;
-      border: none;
-      color: white;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 13px;
-      cursor: pointer;
-      position: absolute;
-      right: 15px;
-      top: 15px;
-      user-select: none;
-    }
-    .copy-btn:hover {
-      background-color: #059669;
-    }
-    .warning {
-      color: #f87171;
-      font-size: 13px;
-      margin-top: 15px;
-      text-align: center;
+      font-size: 1.1rem;
+      word-break: break-all;
     }
   </style>
 </head>
 <body>
 
-  <div class="wallet-card">
-    <h1>🚀 AVODA Wallet</h1>
-    <button id="createWalletBtn" type="button">Create New Wallet</button>
-
-    <div id="walletInfo" style="display:none;">
-      <div class="key-container">
-        <div class="key-label">Address:</div>
-        <div id="address"></div>
-        <button class="copy-btn" onclick="copyToClipboard('address')">Copy</button>
-      </div>
-
-      <div class="key-container" style="margin-top:15px;">
-        <div class="key-label">Private Key:</div>
-        <div id="privateKey"></div>
-        <button class="copy-btn" onclick="copyToClipboard('privateKey')">Copy</button>
-      </div>
-
-      <div class="warning">
-        ⚠️ Never share your private key! Keep it secret and safe.
-      </div>
+  <h1>🚀 AVODA Wallet Generator</h1>
+  <div class="wallet-box">
+    <div>
+      <strong>New Wallet Address:</strong>
+      <p id="walletAddress">Click below to generate</p>
     </div>
+    <button onclick="generateWallet()">Create Wallet</button>
   </div>
 
-<script>
-  const createWalletBtn = document.getElementById('createWalletBtn');
-  const walletInfoDiv = document.getElementById('walletInfo');
-  const addressDiv = document.getElementById('address');
-  const privateKeyDiv = document.getElementById('privateKey');
-
-  function showWallet(wallet) {
-    addressDiv.textContent = wallet.address;
-    privateKeyDiv.textContent = wallet.privateKey;
-    walletInfoDiv.style.display = 'block';
-  }
-
-  function copyToClipboard(id) {
-    const text = document.getElementById(id).textContent;
-    navigator.clipboard.writeText(text).then(() => {
-      alert(`${id === 'privateKey' ? 'Private Key' : 'Address'} copied to clipboard!`);
-    }).catch(() => {
-      alert('Failed to copy!');
-    });
-  }
-
-  function createAndSaveWallet() {
-    const wallet = ethers.Wallet.createRandom();
-    localStorage.setItem('avoda_wallet', JSON.stringify({
-      address: wallet.address,
-      privateKey: wallet.privateKey
-    }));
-    showWallet(wallet);
-  }
-
-  function loadWallet() {
-    const saved = localStorage.getItem('avoda_wallet');
-    if (saved) {
-      const data = JSON.parse(saved);
-      showWallet(data);
+  <script>
+    function generateWallet() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let address = 'AVODA-';
+      for (let i = 0; i < 36; i++) {
+        address += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      document.getElementById("walletAddress").textContent = address;
     }
-  }
-
-  createWalletBtn.addEventListener('click', () => {
-    createAndSaveWallet();
-  });
-
-  window.onload = loadWallet;
-</script>
+  </script>
 
 </body>
-  </html>
+</html>
