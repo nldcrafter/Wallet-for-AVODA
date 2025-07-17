@@ -1,114 +1,110 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AVODA Wallet</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icon.png" type="image/png">
   <style>
-    body { font-family: sans-serif; padding: 2rem; }
-    .wallet-section { margin-bottom: 2rem; }
-    .input-group { display: flex; align-items: center; margin: 0.5rem 0; }
-    .input-group input { flex: 1; padding: 0.5rem; }
-    button { margin-left: 0.5rem; padding: 0.5rem 1rem; }
-    .hidden { display: none; }
-    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 0.5rem 1rem; border-radius: 5px; display: none; }
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    body {
+      background: #10141f;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    h1 {
+      margin-bottom: 10px;
+      color: #00ffd5;
+    }
+    .wallet-box {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 0 15px rgba(0, 255, 213, 0.2);
+      animation: fadeIn 1s ease;
+    }
+    .wallet-box p {
+      word-wrap: break-word;
+      margin-bottom: 5px;
+    }
+    .btn {
+      background: #00ffd5;
+      color: #000;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      margin-top: 10px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .btn:hover {
+      background: #0cfcd0;
+    }
+    .copy-btn {
+      background: #334155;
+      color: #00ffd5;
+      padding: 6px 12px;
+      border-radius: 6px;
+      margin-left: 10px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .label {
+      font-weight: bold;
+      margin-top: 10px;
+      margin-bottom: 3px;
+      color: #94a3b8;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
   <h1>🚀 AVODA Wallet</h1>
-  <div class="wallet-section">
-    <label>Password:</label>
-    <div class="input-group">
-      <input type="password" id="walletPassword" />
-      <button onclick="togglePassword()">Show</button>
+  <button class="btn" onclick="generateWallet()">Create Wallet</button>
+
+  <div class="wallet-box" id="walletBox" style="display: none;">
+    <div>
+      <div class="label">🔓 Public Address:</div>
+      <p id="publicKey"></p>
+      <button class="copy-btn" onclick="copyText('publicKey')">Copy</button>
     </div>
-  </div>  <div class="wallet-section">
-    <button onclick="createWallet()">Generate Wallet</button>
-  </div>  <div class="wallet-section hidden" id="walletInfo">
-    <div class="input-group">
-      <input id="publicKey" readonly />
-      <button onclick="copyToClipboard('publicKey')">📋 Copy</button>
+
+    <div>
+      <div class="label">🔐 Private Key:</div>
+      <p id="privateKey"></p>
+      <button class="copy-btn" onclick="copyText('privateKey')">Copy</button>
     </div>
-    <canvas id="qrcode"></canvas><div class="input-group">
-  <input type="password" id="privateKey" readonly />
-  <button onclick="togglePrivateKey()">Reveal</button>
-  <button onclick="copyToClipboard('privateKey')">📋 Copy</button>
-</div>
+  </div>
 
-<button onclick="downloadPrivateKey()">⬇️ Download Private Key</button>
-<button onclick="logout()">🔒 Logout</button>
+  <script>
+    function generateWallet() {
+      const publicKey = 'AVODA-' + Math.random().toString(36).substr(2, 10).toUpperCase();
+      const privateKey = Math.random().toString(36).substring(2) + Date.now().toString(36);
 
-  </div>  <div class="toast" id="toast"></div>  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>  <script>
-    let isPrivateVisible = false;
-    let autoLockTimer;
-
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      toast.innerText = msg;
-      toast.style.display = 'block';
-      setTimeout(() => { toast.style.display = 'none'; }, 3000);
+      document.getElementById('publicKey').textContent = publicKey;
+      document.getElementById('privateKey').textContent = privateKey;
+      document.getElementById('walletBox').style.display = 'block';
     }
 
-    function togglePassword() {
-      const input = document.getElementById('walletPassword');
-      input.type = input.type === 'password' ? 'text' : 'password';
+    function copyText(elementId) {
+      const text = document.getElementById(elementId).textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Copied to clipboard!');
+      });
     }
-
-    function togglePrivateKey() {
-      const input = document.getElementById('privateKey');
-      isPrivateVisible = !isPrivateVisible;
-      input.type = isPrivateVisible ? 'text' : 'password';
-    }
-
-    function copyToClipboard(id) {
-      const input = document.getElementById(id);
-      navigator.clipboard.writeText(input.value);
-      showToast('Copied!');
-    }
-
-    function createWallet() {
-      const pass = document.getElementById('walletPassword').value;
-      if (!pass) return showToast('Enter a password first!');
-      const pub = 'AVD' + Math.random().toString(36).slice(2, 12);
-      const priv = Math.random().toString(36).slice(2) + Date.now();
-      localStorage.setItem('wallet', JSON.stringify({ pub, priv, pass }));
-      loadWallet();
-    }
-
-    function loadWallet() {
-      const data = JSON.parse(localStorage.getItem('wallet'));
-      if (!data) return;
-      document.getElementById('walletInfo').classList.remove('hidden');
-      document.getElementById('publicKey').value = data.pub;
-      document.getElementById('privateKey').value = data.priv;
-      QRCode.toCanvas(document.getElementById('qrcode'), data.pub);
-      resetAutoLock();
-    }
-
-    function logout() {
-      localStorage.removeItem('wallet');
-      location.reload();
-    }
-
-    function downloadPrivateKey() {
-      const key = document.getElementById('privateKey').value;
-      const blob = new Blob([key], { type: 'text/plain' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'avoda-private-key.txt';
-      a.click();
-    }
-
-    function resetAutoLock() {
-      clearTimeout(autoLockTimer);
-      autoLockTimer = setTimeout(() => {
-        logout();
-      }, 300000); // 5 mins
-    }
-
-    window.onload = loadWallet;
-    document.body.onmousemove = resetAutoLock;
-    document.body.onkeydown = resetAutoLock;
-  </script></body>
-  </html>
+  </script>
+</body>
+</html>
