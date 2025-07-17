@@ -1,112 +1,271 @@
-<!DOCTYPE html><html lang="en"><head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0d0d0d">
-  <title>AVODA Wallet</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🚀 AVODA Wallet</title>
+  <meta name="theme-color" content="#0d0d0d" />
   <style>
+    /* Basic Reset & Styling */
     body {
-      background-color: #0d0d0d;
-      color: #fff;
-      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #0d0d0d;
+      color: #eee;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
       padding: 20px;
-    }.container {
-  max-width: 500px;
-  margin: auto;
-}
-
-.card {
-  background-color: #1a1a1a;
-  border: none;
-  border-radius: 12px;
-  padding: 20px;
-  margin-top: 20px;
-}
-
-.form-control,
-.btn {
-  border-radius: 8px;
-}
-
-.wallet-address {
-  word-break: break-all;
-}
-
+    }
+    .container {
+      background: #1a1a1a;
+      border-radius: 16px;
+      max-width: 450px;
+      width: 100%;
+      padding: 25px 30px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.7);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: 700;
+      color: #1ed760; /* AVODA green */
+    }
+    button {
+      cursor: pointer;
+      background-color: #1ed760;
+      border: none;
+      color: #000;
+      padding: 12px 0;
+      width: 100%;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #17a54a;
+    }
+    .wallet-info {
+      display: none;
+      margin-top: 10px;
+      user-select: text;
+    }
+    .field-label {
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+    .wallet-address, .wallet-key {
+      background: #222;
+      padding: 12px 15px;
+      border-radius: 12px;
+      word-break: break-word;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #0f0;
+      position: relative;
+      margin-bottom: 15px;
+    }
+    .toggle-key-btn {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      background: transparent;
+      border: none;
+      color: #1ed760;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .action-btns {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .action-btns button {
+      flex: 1;
+      background-color: #333;
+      color: #eee;
+      font-weight: 600;
+      padding: 10px 0;
+      border-radius: 10px;
+      transition: background-color 0.3s ease;
+    }
+    .action-btns button:hover {
+      background-color: #1ed760;
+      color: #000;
+    }
+    #qrCanvas {
+      display: block;
+      margin: 0 auto 25px auto;
+      max-width: 250px;
+      width: 100%;
+      border-radius: 16px;
+      background: #111;
+      padding: 15px;
+    }
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 15px;
+      border-radius: 12px;
+      border: none;
+      margin-bottom: 20px;
+      background: #222;
+      color: #eee;
+      font-size: 1rem;
+      font-family: monospace;
+      letter-spacing: 2px;
+    }
+    .balance {
+      font-size: 1.2rem;
+      text-align: center;
+      color: #1ed760;
+      margin-bottom: 25px;
+      font-weight: 700;
+    }
   </style>
-</head><body>
+</head>
+<body>
   <div class="container">
-    <h2 class="text-center">🚀 AVODA Wallet (Beta)</h2><div class="card">
-  <h5>Create Wallet</h5>
-  <button class="btn btn-success w-100 mb-2" onclick="createWallet()">🔐 Generate Wallet</button>
+    <h1>🚀 AVODA Wallet</h1>
+    <button id="createWalletBtn">🔐 Generate Wallet</button>
 
-  <div id="wallet-info" style="display: none;">
-    <p><strong>Address:</strong></p>
-    <p class="wallet-address" id="walletAddress"></p>
+    <div class="wallet-info" id="walletInfo">
+      <div class="field-label">Wallet Address</div>
+      <div class="wallet-address" id="walletAddress"></div>
 
-    <p><strong>Private Key:</strong> <span id="hiddenKey">••••••••••</span>
-      <button class="btn btn-sm btn-secondary" onclick="toggleKey()">👁️</button>
-    </p>
+      <canvas id="qrCanvas"></canvas>
 
-    <button class="btn btn-warning w-100 mb-2" onclick="downloadKey()">⬇️ Download Private Key</button>
-    <button class="btn btn-primary w-100 mb-2" onclick="copyWallet()">📋 Copy to Clipboard</button>
-    <canvas id="qrCanvas" class="w-100"></canvas>
+      <div class="field-label">Private Key
+        <button class="toggle-key-btn" id="toggleKeyBtn">Show</button>
+      </div>
+      <div class="wallet-key" id="walletPrivateKey">••••••••••••••••••••••••••••••••••••••••••••••••</div>
 
-    <hr>
-    <p><strong>Password Protect:</strong></p>
-    <input type="password" id="walletPassword" class="form-control mb-2" placeholder="Set Password">
-    <button class="btn btn-outline-light w-100" onclick="saveToLocal()">💾 Save Wallet to Browser</button>
+      <div class="action-btns">
+        <button id="copyAddressBtn">📋 Copy Address</button>
+        <button id="downloadKeyBtn">⬇️ Download Private Key</button>
+      </div>
+
+      <input type="password" id="passwordInput" placeholder="Set Password (UI only)" />
+
+      <button id="saveWalletBtn">💾 Save Wallet to Browser</button>
+
+      <div class="balance" id="ethBalance">Balance: Loading...</div>
+    </div>
   </div>
-</div>
 
-  </div>  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>  <script>
-    let currentWallet = null;
-    let showKey = false;
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script>
+    let wallet = null;
+    let privateKeyVisible = false;
 
-    function createWallet() {
-      const wallet = ethers.Wallet.createRandom();
-      currentWallet = wallet;
-      document.getElementById("walletAddress").textContent = wallet.address;
-      document.getElementById("hiddenKey").textContent = "••••••••••";
-      document.getElementById("wallet-info").style.display = "block";
+    const createBtn = document.getElementById('createWalletBtn');
+    const walletInfo = document.getElementById('walletInfo');
+    const walletAddressEl = document.getElementById('walletAddress');
+    const walletPrivateKeyEl = document.getElementById('walletPrivateKey');
+    const toggleKeyBtn = document.getElementById('toggleKeyBtn');
+    const copyAddressBtn = document.getElementById('copyAddressBtn');
+    const downloadKeyBtn = document.getElementById('downloadKeyBtn');
+    const saveWalletBtn = document.getElementById('saveWalletBtn');
+    const passwordInput = document.getElementById('passwordInput');
+    const ethBalanceEl = document.getElementById('ethBalance');
+    const qrCanvas = document.getElementById('qrCanvas');
+
+    const INFURA_API_URL = "https://mainnet.infura.io/v3/14094fd62eb54b10ba1fdec7958cdbfa";
+
+    // Create new wallet and show info
+    createBtn.addEventListener('click', () => {
+      wallet = ethers.Wallet.createRandom();
+      walletAddressEl.textContent = wallet.address;
+      walletPrivateKeyEl.textContent = '••••••••••••••••••••••••••••••••••••••••••••••••';
+      privateKeyVisible = false;
+      toggleKeyBtn.textContent = 'Show';
+      walletInfo.style.display = 'block';
       generateQRCode(wallet.address);
-    }
+      fetchBalance(wallet.address);
+    });
 
-    function toggleKey() {
-      showKey = !showKey;
-      if (!currentWallet) return;
-      document.getElementById("hiddenKey").textContent = showKey ? currentWallet.privateKey : "••••••••••";
-    }
+    // Toggle private key visibility
+    toggleKeyBtn.addEventListener('click', () => {
+      if (!wallet) return;
+      privateKeyVisible = !privateKeyVisible;
+      walletPrivateKeyEl.textContent = privateKeyVisible ? wallet.privateKey : '••••••••••••••••••••••••••••••••••••••••••••••••';
+      toggleKeyBtn.textContent = privateKeyVisible ? 'Hide' : 'Show';
+    });
 
-    function copyWallet() {
-      if (!currentWallet) return;
-      navigator.clipboard.writeText(currentWallet.address);
-      alert("Wallet address copied!");
-    }
+    // Copy wallet address
+    copyAddressBtn.addEventListener('click', () => {
+      if (!wallet) return;
+      navigator.clipboard.writeText(wallet.address);
+      alert('Wallet address copied!');
+    });
 
-    function downloadKey() {
-      if (!currentWallet) return;
-      const blob = new Blob([`Address: ${currentWallet.address}\nPrivate Key: ${currentWallet.privateKey}`], { type: 'text/plain' });
+    // Download private key as txt file
+    downloadKeyBtn.addEventListener('click', () => {
+      if (!wallet) return;
+      const blob = new Blob([`Address: ${wallet.address}\nPrivate Key: ${wallet.privateKey}`], {type: 'text/plain'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = "avoda_wallet.txt";
+      a.download = 'avoda_wallet.txt';
       a.click();
-    }
+    });
 
-    function generateQRCode(data) {
-      QRCode.toCanvas(document.getElementById('qrCanvas'), data, { width: 250 }, err => {
-        if (err) console.error(err);
+    // Save wallet info to localStorage (password input is UI only, no encryption)
+    saveWalletBtn.addEventListener('click', () => {
+      if (!wallet) return alert('Generate a wallet first!');
+      const password = passwordInput.value.trim();
+      if (!password) return alert('Please enter a password (UI only)');
+      const walletData = {
+        address: wallet.address,
+        privateKey: wallet.privateKey,
+        password: password
+      };
+      localStorage.setItem('avoda_wallet', JSON.stringify(walletData));
+      alert('Wallet saved to browser storage!');
+    });
+
+    // Generate QR Code for wallet address
+    function generateQRCode(text) {
+      QRCode.toCanvas(qrCanvas, text, {width: 200}, (error) => {
+        if(error) console.error(error);
       });
     }
 
-    function saveToLocal() {
-      const password = document.getElementById("walletPassword").value;
-      if (!password || !currentWallet) return alert("Please enter password and generate wallet first");
-      const walletData = {
-        address: currentWallet.address,
-        privateKey: currentWallet.privateKey
-      };
-      localStorage.setItem("avoda_wallet", JSON.stringify(walletData));
-      alert("Wallet saved to browser");
+    // Fetch ETH balance from Infura using ethers.js
+    async function fetchBalance(address) {
+      ethBalanceEl.textContent = 'Balance: Loading...';
+      try {
+        const provider = new ethers.providers.JsonRpcProvider(INFURA_API_URL);
+        const balance = await provider.getBalance(address);
+        const etherString = ethers.utils.formatEther(balance);
+        ethBalanceEl.textContent = `Balance: ${etherString} ETH`;
+      } catch (err) {
+        ethBalanceEl.textContent = 'Balance: Error fetching';
+        console.error(err);
+      }
     }
-  </script></body></html>
+
+    // On page load, try to load saved wallet
+    window.onload = () => {
+      const saved = localStorage.getItem('avoda_wallet');
+      if (saved) {
+        const data = JSON.parse(saved);
+        wallet = new ethers.Wallet(data.privateKey);
+        walletAddressEl.textContent = wallet.address;
+        walletPrivateKeyEl.textContent = '••••••••••••••••••••••••••••••••••••••••••••••••';
+        privateKeyVisible = false;
+        toggleKeyBtn.textContent = 'Show';
+        walletInfo.style.display = 'block';
+        passwordInput.value = data.password || '';
+        generateQRCode(wallet.address);
+        fetchBalance(wallet.address);
+      }
+    };
+  </script>
+</body>
+  </html>
