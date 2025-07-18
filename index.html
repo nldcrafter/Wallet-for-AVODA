@@ -1,183 +1,455 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AVODA Wallet</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.umd.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #1f4037, #99f2c8);
-      color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-    }
-    .wallet-container {
-      background: #1e293b;
-      border-radius: 20px;
-      padding: 30px;
-      max-width: 400px;
-      width: 90%;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-      animation: fadeIn 0.5s ease-in-out;
-    }
-    h1 {
-      text-align: center;
-      font-size: 1.8rem;
-      margin-bottom: 1.5rem;
-    }
-    input, button, select {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 1rem;
-      border: none;
-      border-radius: 10px;
-      font-size: 1rem;
-    }
-    button {
-      background-color: #4ade80;
-      color: black;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    button:hover {
-      background-color: #22c55e;
-    }
-    .balance, .history {
-      margin-top: 1.2rem;
-      font-size: 0.95rem;
-      background: #334155;
-      padding: 1rem;
-      border-radius: 10px;
-    }
-    @keyframes fadeIn {
-      from {opacity: 0; transform: translateY(20px);}
-      to {opacity: 1; transform: translateY(0);}
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Avoda Wallet 🌿</title>
+<!-- Web3.js -->
+<script src="https://cdn.jsdelivr.net/npm/web3@1.8.2/dist/web3.min.js"></script>
+<!-- CryptoJS for encryption -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<!-- QRCode.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @keyframes gradientBG {
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
+  }
+  body {
+    margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    height: 100vh; overflow: hidden;
+    background: linear-gradient(-45deg, #1e3c72, #2a5298, #00b09b, #96c93d);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    display: flex; justify-content: center; align-items: center;
+  }
+  .container {
+    background: rgba(20, 30, 40, 0.9);
+    border-radius: 20px;
+    padding: 30px 25px;
+    width: 360px;
+    color: white;
+    box-shadow: 0 0 20px rgba(0,255,128,0.6);
+    position: relative;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+  }
+  .screen {
+    display: none;
+    animation: fadeIn 0.6s ease forwards;
+  }
+  .active {
+    display: block;
+  }
+  @keyframes fadeIn {
+    from {opacity: 0; transform: translateY(20px);}
+    to {opacity: 1; transform: translateY(0);}
+  }
+  input, select {
+    width: 100%;
+    padding: 12px 15px;
+    margin: 12px 0;
+    border-radius: 12px;
+    border: none;
+    background: #223344;
+    color: white;
+    font-size: 15px;
+    outline: none;
+    box-sizing: border-box;
+  }
+  input::placeholder {
+    color: #8ab6d6;
+  }
+  button {
+    width: 100%;
+    padding: 14px;
+    margin: 15px 0 0;
+    border-radius: 12px;
+    border: none;
+    background: #00ff7f;
+    color: #0a0a0a;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 17px;
+    transition: background 0.3s ease;
+  }
+  button:hover {
+    background: #00cc66;
+  }
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .btn-row button {
+    flex: 1;
+  }
+  #qrcode {
+    margin: 20px auto;
+    width: 140px; height: 140px;
+    background: white; border-radius: 20px;
+  }
+  .address-box {
+    background: #0b1a26;
+    padding: 12px;
+    border-radius: 15px;
+    font-size: 14px;
+    word-break: break-all;
+    user-select: all;
+    text-align: center;
+    margin-top: 15px;
+  }
+  .balance {
+    margin-top: 15px;
+    font-weight: 700;
+    font-size: 18px;
+    text-align: center;
+    color: #00ff7f;
+  }
+  .pin-inputs {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+  }
+  .pin-inputs input {
+    width: 45px;
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 10px;
+  }
+  .nav-link {
+    text-align: center;
+    margin-top: 15px;
+    color: #00cc66;
+    cursor: pointer;
+    user-select: none;
+  }
+  .nav-link:hover {
+    text-decoration: underline;
+  }
+  /* Transaction history */
+  .history {
+    max-height: 140px;
+    overflow-y: auto;
+    background: #122433;
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 13px;
+    margin-top: 20px;
+  }
+  .history strong {
+    display: block;
+    margin-bottom: 10px;
+    color: #00ff7f;
+  }
+  .history ul {
+    list-style: none;
+    padding-left: 10px;
+  }
+  .history ul li {
+    margin-bottom: 6px;
+    color: #a5d6a7;
+  }
+</style>
 </head>
 <body>
-  <div class="wallet-container">
-    <h1>AVODA Wallet</h1>
+  <div class="container">
 
-    <button onclick="connectWallet()">🔗 Connect Wallet</button>
-    <button onclick="createWallet()">🆕 Create Wallet</button>
-    <input type="text" id="privateKey" placeholder="Paste Private Key" />
-    <button onclick="importWallet()">📥 Import Wallet</button>
+    <h1>Avoda Wallet 🌿</h1>
 
-    <div class="balance">
-      <strong>Balance:</strong> <span id="walletBalance">0 ETH</span>
+    <!-- PIN screen -->
+    <div id="pinScreen" class="screen active">
+      <p style="text-align:center; font-weight:600;">Enter 4-digit PIN to unlock wallet</p>
+      <div class="pin-inputs">
+        <input maxlength="1" type="password" inputmode="numeric" pattern="[0-9]*" id="pin1" />
+        <input maxlength="1" type="password" inputmode="numeric" pattern="[0-9]*" id="pin2" />
+        <input maxlength="1" type="password" inputmode="numeric" pattern="[0-9]*" id="pin3" />
+        <input maxlength="1" type="password" inputmode="numeric" pattern="[0-9]*" id="pin4" />
+      </div>
+      <button id="pinSubmitBtn">Unlock</button>
+      <p style="text-align:center; margin-top: 10px; font-size: 14px; color: #a6ffa6;">If new, create wallet or import below</p>
+      <div class="btn-row" style="margin-top: 10px;">
+        <button onclick="showScreen('createScreen')">Create Wallet</button>
+        <button onclick="showScreen('importScreen')">Import Wallet</button>
+      </div>
     </div>
 
-    <input type="text" id="depositAddress" placeholder="Your Deposit Address (ETH)" />
-    <button onclick="copyAddress()">📋 Copy Address</button>
+    <!-- Create Wallet screen -->
+    <div id="createScreen" class="screen">
+      <button onclick="showScreen('pinScreen')" style="margin-bottom: 10px;">⬅ Back</button>
+      <button id="createWalletBtn">🆕 Create New Wallet</button>
+    </div>
 
-    <input type="text" id="withdrawTo" placeholder="Withdraw To Address" />
-    <input type="text" id="withdrawAmount" placeholder="Amount in ETH" />
-    <button onclick="withdrawEth()">💸 Withdraw</button>
+    <!-- Import Wallet screen -->
+    <div id="importScreen" class="screen">
+      <button onclick="showScreen('pinScreen')" style="margin-bottom: 10px;">⬅ Back</button>
+      <label>Enter Private Key</label>
+      <input id="importPrivateKey" placeholder="0x..." autocomplete="off" />
+      <button id="importWalletBtn">📥 Import Wallet</button>
+    </div>
 
-    <select id="networkSelect">
-      <option value="mainnet">Ethereum Mainnet</option>
-      <option value="goerli">Goerli Testnet</option>
-    </select>
-    <button onclick="switchNetwork()">🌐 Switch Network</button>
+    <!-- Wallet screen -->
+    <div id="walletScreen" class="screen">
+      <button onclick="logout()" style="margin-bottom: 15px;">⬅ Logout</button>
+      <label>Network</label>
+      <select id="networkSelect">
+        <option value="https://mainnet.infura.io/v3/YOUR_INFURA_ID">Ethereum Mainnet</option>
+        <option value="https://polygon-rpc.com">Polygon</option>
+        <option value="https://bsc-dataseed.binance.org/">Binance Smart Chain</option>
+      </select>
 
-    <div class="history">
-      <strong>Transaction History:</strong>
-      <ul id="txHistory">
-        <li>No transactions yet.</li>
-      </ul>
+      <div class="address-box" id="walletAddress">Address: --</div>
+      <div class="balance" id="walletBalance">Balance: -- ETH</div>
+
+      <div id="qrcode"></div>
+
+      <label>Send To Address</label>
+      <input id="sendTo" placeholder="0x..." autocomplete="off" />
+      <label>Amount (ETH)</label>
+      <input id="sendAmount" type="number" step="0.0001" placeholder="0.0" />
+
+      <button id="sendTxBtn">📤 Send Transaction</button>
+
+      <div class="history">
+        <strong>Transaction History</strong>
+        <ul id="txHistory"></ul>
+      </div>
     </div>
   </div>
 
-  <script>
-    let provider;
-    let signer;
+<script>
+  let web3;
+  let account;
+  let txHistory = [];
+  const STORAGE_KEY = "avoda_wallet_encrypted_pk";
+  const STORAGE_PIN = "avoda_wallet_pin";
 
-    async function connectWallet() {
-      if (window.ethereum) {
-        provider = new ethers.BrowserProvider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        signer = await provider.getSigner();
-        const address = await signer.getAddress();
-        document.getElementById('depositAddress').value = address;
-        updateBalance();
-      } else {
-        alert("Please install MetaMask to use this wallet.");
+  function showScreen(id) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+  }
+
+  // PIN input auto-focus
+  const pinInputs = [...document.querySelectorAll(".pin-inputs input")];
+  pinInputs.forEach((input, i) => {
+    input.addEventListener("input", () => {
+      if (input.value.length === 1 && i < pinInputs.length -1) {
+        pinInputs[i+1].focus();
       }
-    }
+    });
+  });
 
-    async function createWallet() {
-      const wallet = ethers.Wallet.createRandom();
-      alert(`Wallet Address: ${wallet.address}\nPrivate Key: ${wallet.privateKey}`);
-      document.getElementById('privateKey').value = wallet.privateKey;
-      document.getElementById('depositAddress').value = wallet.address;
+  function savePin(pin) {
+    localStorage.setItem(STORAGE_PIN, pin);
+  }
+  function getSavedPin() {
+    return localStorage.getItem(STORAGE_PIN);
+  }
+  function encryptPK(pk, pin) {
+    return CryptoJS.AES.encrypt(pk, pin).toString();
+  }
+  function decryptPK(encPk, pin) {
+    try {
+      const bytes = CryptoJS.AES.decrypt(encPk, pin);
+      return bytes.toString(CryptoJS.enc.Utf8);
+    } catch {
+      return null;
     }
+  }
+  function saveWallet(pk, pin) {
+    const enc = encryptPK(pk, pin);
+    localStorage.setItem(STORAGE_KEY, enc);
+  }
+  function loadWallet(pin) {
+    const enc = localStorage.getItem(STORAGE_KEY);
+    if (!enc) return null;
+    const pk = decryptPK(enc, pin);
+    if (!pk) return null;
+    return pk;
+  }
+  function updateQRCode(text) {
+    const qrContainer = document.getElementById("qrcode");
+    qrContainer.innerHTML = "";
+    if (!text) return;
+    new QRCode(qrContainer, {
+      text: text,
+      width: 140,
+      height: 140,
+      colorDark: "#0b1a26",
+      colorLight: "#4ade80",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
+  async function updateBalance() {
+    if (!account || !account.address) {
+      document.getElementById("walletBalance").innerText = "Balance: --";
+      return;
+    }
+    try {
+      const balanceWei = await web3.eth.getBalance(account.address);
+      const balanceEth = web3.utils.fromWei(balanceWei, "ether");
+      document.getElementById("walletBalance").innerText = "Balance: " + Number(balanceEth).toFixed(5) + " ETH";
+    } catch {
+      document.getElementById("walletBalance").innerText = "Balance: Error";
+    }
+  }
+  function showAccountInfo() {
+    document.getElementById("walletAddress").innerText = "Address: " + account.address;
+    updateQRCode(account.address);
+    updateBalance();
+  }
+  async function initWeb3(rpcUrl) {
+  web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl));
+}
 
-    async function importWallet() {
-      const pk = document.getElementById('privateKey').value.trim();
-      if (!pk) return alert("Please enter a private key.");
-      try {
-        signer = new ethers.Wallet(pk);
-        document.getElementById('depositAddress').value = signer.address;
-        updateBalance();
-      } catch (err) {
-        alert("Invalid private key");
-      }
-    }
+async function createNewWallet(pin) {
+  if (!web3) await initWeb3(document.getElementById("networkSelect").value);
+  account = web3.eth.accounts.create();
+  saveWallet(account.privateKey, pin);
+  alert("Wallet created!\n\nAddress:\n" + account.address + "\n\nSave your private key safely!");
+  showAccountInfo();
+  showScreen("walletScreen");
+}
 
-    async function updateBalance() {
-      if (!signer) return;
-      const balance = await provider.getBalance(signer.address);
-      document.getElementById('walletBalance').textContent = ethers.formatEther(balance) + ' ETH';
-    }
+async function importWalletByPK(pin) {
+  const pk = document.getElementById("importPrivateKey").value.trim();
+  if (!pk || !pk.startsWith("0x") || pk.length !== 66) {
+    alert("Please enter a valid private key starting with 0x and 64 hex characters.");
+    return;
+  }
+  if (!web3) await initWeb3(document.getElementById("networkSelect").value);
+  try {
+    account = web3.eth.accounts.privateKeyToAccount(pk);
+    saveWallet(account.privateKey, pin);
+    alert("Wallet imported!\n\nAddress:\n" + account.address);
+    showAccountInfo();
+    showScreen("walletScreen");
+  } catch {
+    alert("Invalid private key");
+  }
+}
 
-    async function copyAddress() {
-      const addr = document.getElementById('depositAddress').value;
-      await navigator.clipboard.writeText(addr);
-      alert("Address copied to clipboard");
-    }
+async function sendTransaction() {
+  if (!account) {
+    alert("No wallet connected!");
+    return;
+  }
+  if (!window.ethereum) {
+    alert("No Ethereum provider found (like MetaMask). Please install or connect your wallet.");
+    return;
+  }
+  const to = document.getElementById("sendTo").value.trim();
+  const amount = document.getElementById("sendAmount").value.trim();
+  if (!web3.utils.isAddress(to)) {
+    alert("Invalid recipient address.");
+    return;
+  }
+  if (isNaN(amount) || Number(amount) <= 0) {
+    alert("Enter a valid amount.");
+    return;
+  }
+  try {
+    const valueWei = web3.utils.toWei(amount, "ether");
+    const txParams = {
+      from: account.address,
+      to: to,
+      value: valueWei,
+      gas: "21000",
+    };
+    await window.ethereum.request({
+      method: "eth_sendTransaction",
+      params: [txParams],
+    });
+    alert("Transaction sent!");
+    txHistory.push(`Sent ${amount} ETH to ${to}`);
+    updateTxHistory();
+    updateBalance();
+  } catch (err) {
+    alert("Transaction failed: " + err.message);
+  }
+}
 
-    async function withdrawEth() {
-      if (!signer || !provider) return alert("Connect wallet first");
-      const to = document.getElementById('withdrawTo').value.trim();
-      const amount = document.getElementById('withdrawAmount').value.trim();
-      if (!to || !amount) return alert("Fill in both fields");
-      try {
-        const tx = await signer.sendTransaction({
-          to,
-          value: ethers.parseEther(amount)
-        });
-        alert("Transaction sent! TX Hash: " + tx.hash);
-        document.getElementById('txHistory').innerHTML += `<li>${tx.hash}</li>`;
-        updateBalance();
-      } catch (e) {
-        alert("Transaction failed: " + e.message);
-      }
-    }
+function updateTxHistory() {
+  const list = document.getElementById("txHistory");
+  list.innerHTML = "";
+  txHistory.slice(-5).reverse().forEach(tx => {
+    const li = document.createElement("li");
+    li.textContent = tx;
+    list.appendChild(li);
+  });
+}
 
-    async function switchNetwork() {
-      const selected = document.getElementById('networkSelect').value;
-      let chainId = '0x1'; // Mainnet by default
-      if (selected === 'goerli') chainId = '0x5';
-      try {
-        await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId }],
-        });
-      } catch (e) {
-        alert("Failed to switch network: " + e.message);
-      }
+function logout() {
+  account = null;
+  txHistory = [];
+  document.getElementById("importPrivateKey").value = "";
+  document.getElementById("sendTo").value = "";
+  document.getElementById("sendAmount").value = "";
+  document.getElementById("walletBalance").innerText = "Balance: --";
+  document.getElementById("walletAddress").innerText = "Address: --";
+  document.getElementById("qrcode").innerHTML = "";
+  showScreen("pinScreen");
+}
+
+// Event listeners
+document.getElementById("pinSubmitBtn").addEventListener("click", () => {
+  const pin = pinInputs.map(i => i.value).join("");
+  if (pin.length !== 4) {
+    alert("Enter 4-digit PIN");
+    return;
+  }
+  const savedPin = getSavedPin();
+  if (!savedPin) {
+    // First time, save pin and create empty wallet
+    savePin(pin);
+    alert("PIN saved! Now create or import your wallet.");
+    showScreen("pinScreen");
+  } else if (pin === savedPin) {
+    // Load wallet and show wallet screen
+    const pk = loadWallet(pin);
+    if (!pk) {
+      alert("No wallet found for this PIN. Create or import a wallet.");
+      showScreen("pinScreen");
+      return;
     }
-  </script>
+    if (!web3) initWeb3(document.getElementById("networkSelect").value);
+    account = web3.eth.accounts.privateKeyToAccount(pk);
+    showAccountInfo();
+    showScreen("walletScreen");
+  } else {
+    alert("Wrong PIN!");
+  }
+});
+
+document.getElementById("createWalletBtn").addEventListener("click", async () => {
+  const pin = getSavedPin();
+  if (!pin) return alert("Set your 4-digit PIN first on unlock screen.");
+  await createNewWallet(pin);
+});
+
+document.getElementById("importWalletBtn").addEventListener("click", async () => {
+  const pin = getSavedPin();
+  if (!pin) return alert("Set your 4-digit PIN first on unlock screen.");
+  await importWalletByPK(pin);
+});
+
+document.getElementById("sendTxBtn").addEventListener("click", sendTransaction);
+
+document.getElementById("networkSelect").addEventListener("change", async () => {
+  if (!account) return;
+  await initWeb3(document.getElementById("networkSelect").value);
+  showAccountInfo();
+});
+
+// Initialize default network
+initWeb3(document.getElementById("networkSelect").value);
+</script>
 </body>
-</html>
-
+</html>  
