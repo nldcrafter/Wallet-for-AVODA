@@ -1,271 +1,177 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>🚀 AVODA Wallet</title>
-  <meta name="theme-color" content="#0d0d0d" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AVODA Wallet</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
   <style>
-    /* Basic Reset & Styling */
     body {
+      font-family: 'Poppins', sans-serif;
       margin: 0;
-      background: #0d0d0d;
-      color: #eee;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4fdf4;
+      color: #333;
+    }
+    header {
+      background: #16a34a;
+      color: white;
+      padding: 1rem 2rem;
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
-      padding: 20px;
+      justify-content: space-between;
+      align-items: center;
     }
     .container {
-      background: #1a1a1a;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+    }
+    .balance-card {
+      background: white;
       border-radius: 16px;
-      max-width: 450px;
-      width: 100%;
-      padding: 25px 30px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.7);
-    }
-    h1 {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
       text-align: center;
-      margin-bottom: 20px;
-      font-weight: 700;
-      color: #1ed760; /* AVODA green */
     }
-    button {
-      cursor: pointer;
-      background-color: #1ed760;
-      border: none;
-      color: #000;
-      padding: 12px 0;
-      width: 100%;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 700;
-      margin-bottom: 20px;
-      transition: background-color 0.3s ease;
+    .balance-card h2 {
+      margin: 0.5rem 0;
     }
-    button:hover {
-      background-color: #17a54a;
-    }
-    .wallet-info {
-      display: none;
-      margin-top: 10px;
-      user-select: text;
-    }
-    .field-label {
-      font-weight: 600;
-      margin-bottom: 6px;
-      font-size: 0.9rem;
-      color: #aaa;
-    }
-    .wallet-address, .wallet-key {
-      background: #222;
-      padding: 12px 15px;
-      border-radius: 12px;
-      word-break: break-word;
-      font-family: monospace;
-      font-size: 0.9rem;
-      color: #0f0;
-      position: relative;
-      margin-bottom: 15px;
-    }
-    .toggle-key-btn {
-      position: absolute;
-      right: 12px;
-      top: 12px;
-      background: transparent;
-      border: none;
-      color: #1ed760;
-      font-weight: 700;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-    .action-btns {
+    .coin-list {
       display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
+      flex-direction: column;
+      gap: 1rem;
     }
-    .action-btns button {
-      flex: 1;
-      background-color: #333;
-      color: #eee;
-      font-weight: 600;
-      padding: 10px 0;
-      border-radius: 10px;
-      transition: background-color 0.3s ease;
-    }
-    .action-btns button:hover {
-      background-color: #1ed760;
-      color: #000;
-    }
-    #qrCanvas {
-      display: block;
-      margin: 0 auto 25px auto;
-      max-width: 250px;
-      width: 100%;
-      border-radius: 16px;
-      background: #111;
-      padding: 15px;
-    }
-    input[type="password"] {
-      width: 100%;
-      padding: 12px 15px;
+    .coin {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #ffffff;
+      padding: 1rem;
       border-radius: 12px;
-      border: none;
-      margin-bottom: 20px;
-      background: #222;
-      color: #eee;
-      font-size: 1rem;
-      font-family: monospace;
-      letter-spacing: 2px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
-    .balance {
-      font-size: 1.2rem;
-      text-align: center;
-      color: #1ed760;
-      margin-bottom: 25px;
-      font-weight: 700;
+    .coin img {
+      width: 32px;
+      height: 32px;
+      margin-right: 1rem;
+    }
+    .dark-mode {
+      background: #0e1c11;
+      color: white;
+    }
+    .toggle {
+      cursor: pointer;
+      padding: 0.3rem 0.8rem;
+      background: #ffffff33;
+      border-radius: 8px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🚀 AVODA Wallet</h1>
-    <button id="createWalletBtn">🔐 Generate Wallet</button>
+  <header>
+    <h1>AVODA Wallet</h1>
+    <div class="toggle" onclick="toggleDarkMode()">🌓</div>
+  </header>  <div class="container">
+    <div class="balance-card">
+      <h3>Wallet Address:</h3>
+      <p id="wallet-address">0x...</p>
+      <h2>Total Balance</h2>
+      <h1 id="total-balance">$0.00</h1>
+    </div><div class="coin-list" id="coin-list">
+  <!-- Coins will load here -->
+</div>
 
-    <div class="wallet-info" id="walletInfo">
-      <div class="field-label">Wallet Address</div>
-      <div class="wallet-address" id="walletAddress"></div>
+  </div>  <script>
+    const walletAddress = "0x0000000000000000000000000000000000000000"; // replace with actual wallet
+    const infuraAPI = "https://mainnet.infura.io/v3/14094fd62eb54b10ba1fdec7958cdbfa";
 
-      <canvas id="qrCanvas"></canvas>
+    const coins = [
+      {
+        name: "Ethereum",
+        symbol: "ETH",
+        address: null,
+        logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+        decimals: 18
+      },
+      {
+        name: "Tether",
+        symbol: "USDT",
+        address: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        logo: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+        decimals: 6
+      }
+    ];
 
-      <div class="field-label">Private Key
-        <button class="toggle-key-btn" id="toggleKeyBtn">Show</button>
-      </div>
-      <div class="wallet-key" id="walletPrivateKey">••••••••••••••••••••••••••••••••••••••••••••••••</div>
+    document.getElementById("wallet-address").textContent = walletAddress;
 
-      <div class="action-btns">
-        <button id="copyAddressBtn">📋 Copy Address</button>
-        <button id="downloadKeyBtn">⬇️ Download Private Key</button>
-      </div>
-
-      <input type="password" id="passwordInput" placeholder="Set Password (UI only)" />
-
-      <button id="saveWalletBtn">💾 Save Wallet to Browser</button>
-
-      <div class="balance" id="ethBalance">Balance: Loading...</div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <script>
-    let wallet = null;
-    let privateKeyVisible = false;
-
-    const createBtn = document.getElementById('createWalletBtn');
-    const walletInfo = document.getElementById('walletInfo');
-    const walletAddressEl = document.getElementById('walletAddress');
-    const walletPrivateKeyEl = document.getElementById('walletPrivateKey');
-    const toggleKeyBtn = document.getElementById('toggleKeyBtn');
-    const copyAddressBtn = document.getElementById('copyAddressBtn');
-    const downloadKeyBtn = document.getElementById('downloadKeyBtn');
-    const saveWalletBtn = document.getElementById('saveWalletBtn');
-    const passwordInput = document.getElementById('passwordInput');
-    const ethBalanceEl = document.getElementById('ethBalance');
-    const qrCanvas = document.getElementById('qrCanvas');
-
-    const INFURA_API_URL = "https://mainnet.infura.io/v3/14094fd62eb54b10ba1fdec7958cdbfa";
-
-    // Create new wallet and show info
-    createBtn.addEventListener('click', () => {
-      wallet = ethers.Wallet.createRandom();
-      walletAddressEl.textContent = wallet.address;
-      walletPrivateKeyEl.textContent = '••••••••••••••••••••••••••••••••••••••••••••••••';
-      privateKeyVisible = false;
-      toggleKeyBtn.textContent = 'Show';
-      walletInfo.style.display = 'block';
-      generateQRCode(wallet.address);
-      fetchBalance(wallet.address);
-    });
-
-    // Toggle private key visibility
-    toggleKeyBtn.addEventListener('click', () => {
-      if (!wallet) return;
-      privateKeyVisible = !privateKeyVisible;
-      walletPrivateKeyEl.textContent = privateKeyVisible ? wallet.privateKey : '••••••••••••••••••••••••••••••••••••••••••••••••';
-      toggleKeyBtn.textContent = privateKeyVisible ? 'Hide' : 'Show';
-    });
-
-    // Copy wallet address
-    copyAddressBtn.addEventListener('click', () => {
-      if (!wallet) return;
-      navigator.clipboard.writeText(wallet.address);
-      alert('Wallet address copied!');
-    });
-
-    // Download private key as txt file
-    downloadKeyBtn.addEventListener('click', () => {
-      if (!wallet) return;
-      const blob = new Blob([`Address: ${wallet.address}\nPrivate Key: ${wallet.privateKey}`], {type: 'text/plain'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'avoda_wallet.txt';
-      a.click();
-    });
-
-    // Save wallet info to localStorage (password input is UI only, no encryption)
-    saveWalletBtn.addEventListener('click', () => {
-      if (!wallet) return alert('Generate a wallet first!');
-      const password = passwordInput.value.trim();
-      if (!password) return alert('Please enter a password (UI only)');
-      const walletData = {
-        address: wallet.address,
-        privateKey: wallet.privateKey,
-        password: password
-      };
-      localStorage.setItem('avoda_wallet', JSON.stringify(walletData));
-      alert('Wallet saved to browser storage!');
-    });
-
-    // Generate QR Code for wallet address
-    function generateQRCode(text) {
-      QRCode.toCanvas(qrCanvas, text, {width: 200}, (error) => {
-        if(error) console.error(error);
+    async function fetchETHBalance() {
+      const res = await fetch(infuraAPI, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          method: "eth_getBalance",
+          params: [walletAddress, "latest"],
+          id: 1
+        })
       });
+      const data = await res.json();
+      return parseFloat(parseInt(data.result, 16) / 1e18).toFixed(4);
     }
 
-    // Fetch ETH balance from Infura using ethers.js
-    async function fetchBalance(address) {
-      ethBalanceEl.textContent = 'Balance: Loading...';
-      try {
-        const provider = new ethers.providers.JsonRpcProvider(INFURA_API_URL);
-        const balance = await provider.getBalance(address);
-        const etherString = ethers.utils.formatEther(balance);
-        ethBalanceEl.textContent = `Balance: ${etherString} ETH`;
-      } catch (err) {
-        ethBalanceEl.textContent = 'Balance: Error fetching';
-        console.error(err);
-      }
+    async function fetchTokenBalance(token) {
+      const data = {
+        jsonrpc: "2.0",
+        method: "eth_call",
+        params: [{
+          to: token.address,
+          data: `0x70a08231000000000000000000000000${walletAddress.substring(2)}`
+        }, "latest"],
+        id: 1
+      };
+
+      const res = await fetch(infuraAPI, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      return parseFloat(parseInt(result.result, 16) / 10 ** token.decimals).toFixed(2);
     }
 
-    // On page load, try to load saved wallet
-    window.onload = () => {
-      const saved = localStorage.getItem('avoda_wallet');
-      if (saved) {
-        const data = JSON.parse(saved);
-        wallet = new ethers.Wallet(data.privateKey);
-        walletAddressEl.textContent = wallet.address;
-        walletPrivateKeyEl.textContent = '••••••••••••••••••••••••••••••••••••••••••••••••';
-        privateKeyVisible = false;
-        toggleKeyBtn.textContent = 'Show';
-        walletInfo.style.display = 'block';
-        passwordInput.value = data.password || '';
-        generateQRCode(wallet.address);
-        fetchBalance(wallet.address);
+    async function loadWallet() {
+      let total = 0;
+      const coinList = document.getElementById("coin-list");
+      coinList.innerHTML = "";
+
+      for (const coin of coins) {
+        let balance = 0;
+        if (!coin.address) {
+          balance = await fetchETHBalance();
+          total += balance * 3100; // Example ETH price
+        } else {
+          balance = await fetchTokenBalance(coin);
+          total += balance * 1; // Example USDT is stable
+        }
+
+        const coinDiv = document.createElement("div");
+        coinDiv.className = "coin";
+        coinDiv.innerHTML = `
+          <div style="display:flex; align-items:center;">
+            <img src="${coin.logo}" alt="${coin.symbol}" />
+            <strong>${coin.name}</strong>
+          </div>
+          <span>${balance} ${coin.symbol}</span>
+        `;
+        coinList.appendChild(coinDiv);
       }
-    };
-  </script>
-</body>
-  </html>
+
+      document.getElementById("total-balance").textContent = `$${total.toFixed(2)}`;
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+    }
+
+    loadWallet();
+  </script></body>
+</html>
