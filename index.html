@@ -1,194 +1,183 @@
-<!DOCTYPE html><html lang="en"><head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Avoda Wallet</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AVODA Wallet</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.0.0/crypto-js.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.umd.min.js"></script>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #121212;
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #1f4037, #99f2c8);
       color: white;
-      padding: 20px;
-      max-width: 400px;
-      margin: auto;
-      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
     }
-    .light-mode {
-      background: #f0f0f0;
-      color: #121212;
+    .wallet-container {
+      background: #1e293b;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
     }
     input, button, select {
-      margin: 5px 0;
-      padding: 10px;
       width: 100%;
-      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 1rem;
       border: none;
+      border-radius: 10px;
+      font-size: 1rem;
     }
     button {
-      background: #4CAF50;
-      color: white;
+      background-color: #4ade80;
+      color: black;
+      font-weight: bold;
       cursor: pointer;
+      transition: all 0.3s ease;
     }
     button:hover {
-      opacity: 0.9;
+      background-color: #22c55e;
     }
-    #qrcode canvas {
-      width: 100%;
+    .balance, .history {
+      margin-top: 1.2rem;
+      font-size: 0.95rem;
+      background: #334155;
+      padding: 1rem;
+      border-radius: 10px;
     }
-    .history {
-      margin-top: 15px;
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(20px);}
+      to {opacity: 1; transform: translateY(0);}
     }
   </style>
-</head><body>
-  <h2>Avoda Wallet 💼</h2>  <select id="network" onchange="initWeb3(this.value)">
-    <option value="https://mainnet.infura.io/v3/">Ethereum</option>
-    <option value="https://bsc-dataseed.binance.org/">Binance Smart Chain</option>
-    <option value="https://polygon-rpc.com/">Polygon</option>
-  </select><button onclick="createWallet()">🆕 Create Wallet</button> <input id="importPK" placeholder="Private Key"> <button onclick="importWallet()">📥 Import Wallet</button>
+</head>
+<body>
+  <div class="wallet-container">
+    <h1>AVODA Wallet</h1>
 
-  <input id="password" type="password" placeholder="Password">
-  <button onclick="saveWalletEncrypted()">🔒 Save</button>  <p>Address: <span id="address">-</span></p>
-  <p>Balance: <span id="balance">-</span></p>
-  <p id="usd">USD Value: -</p>  <div id="qrcode"></div>  <input id="to" placeholder="To (address or ENS)">
-  <input id="amount" placeholder="Amount">
-  <button onclick="estimateGas()">⛽ Estimate Gas</button>
-  <button onclick="sendTransaction()">📤 Send</button><button onclick="connectMetaMask()">🦊 Connect MetaMask</button> <button onclick="downloadEncryptedKey()">💾 Backup Wallet</button> <button id="themeToggle">🌓 Toggle Theme</button>
+    <button onclick="connectWallet()">🔗 Connect Wallet</button>
+    <button onclick="createWallet()">🆕 Create Wallet</button>
+    <input type="text" id="privateKey" placeholder="Paste Private Key" />
+    <button onclick="importWallet()">📥 Import Wallet</button>
 
-  <div class="history">
-    <h4>History</h4>
-    <ul id="history"></ul>
-  </div>  <script>
-    let web3, account;
-    const encryptedPKKey = "avoda_encrypted_key";
+    <div class="balance">
+      <strong>Balance:</strong> <span id="walletBalance">0 ETH</span>
+    </div>
 
-    function initWeb3(network) {
-      web3 = new Web3(new Web3.providers.HttpProvider(network));
-    }
+    <input type="text" id="depositAddress" placeholder="Your Deposit Address (ETH)" />
+    <button onclick="copyAddress()">📋 Copy Address</button>
 
-    function getSymbolFromNetwork() {
-      const url = document.getElementById("network").value;
-      if (url.includes("bsc")) return "BNB";
-      if (url.includes("polygon")) return "MATIC";
-      return "ETH";
+    <input type="text" id="withdrawTo" placeholder="Withdraw To Address" />
+    <input type="text" id="withdrawAmount" placeholder="Amount in ETH" />
+    <button onclick="withdrawEth()">💸 Withdraw</button>
+
+    <select id="networkSelect">
+      <option value="mainnet">Ethereum Mainnet</option>
+      <option value="goerli">Goerli Testnet</option>
+    </select>
+    <button onclick="switchNetwork()">🌐 Switch Network</button>
+
+    <div class="history">
+      <strong>Transaction History:</strong>
+      <ul id="txHistory">
+        <li>No transactions yet.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    let provider;
+    let signer;
+
+    async function connectWallet() {
+      if (window.ethereum) {
+        provider = new ethers.BrowserProvider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = await provider.getSigner();
+        const address = await signer.getAddress();
+        document.getElementById('depositAddress').value = address;
+        updateBalance();
+      } else {
+        alert("Please install MetaMask to use this wallet.");
+      }
     }
 
     async function createWallet() {
-      account = web3.eth.accounts.create();
-      displayWallet();
+      const wallet = ethers.Wallet.createRandom();
+      alert(`Wallet Address: ${wallet.address}\nPrivate Key: ${wallet.privateKey}`);
+      document.getElementById('privateKey').value = wallet.privateKey;
+      document.getElementById('depositAddress').value = wallet.address;
     }
 
-    function importWallet() {
-      account = web3.eth.accounts.privateKeyToAccount(document.getElementById("importPK").value);
-      displayWallet();
+    async function importWallet() {
+      const pk = document.getElementById('privateKey').value.trim();
+      if (!pk) return alert("Please enter a private key.");
+      try {
+        signer = new ethers.Wallet(pk);
+        document.getElementById('depositAddress').value = signer.address;
+        updateBalance();
+      } catch (err) {
+        alert("Invalid private key");
+      }
     }
 
-    function displayWallet() {
-      document.getElementById("address").innerText = account.address;
-      QRCode.toCanvas(document.getElementById("qrcode"), account.address);
-      getBalance();
+    async function updateBalance() {
+      if (!signer) return;
+      const balance = await provider.getBalance(signer.address);
+      document.getElementById('walletBalance').textContent = ethers.formatEther(balance) + ' ETH';
     }
 
-    async function getBalance() {
-      const balance = await web3.eth.getBalance(account.address);
-      const symbol = getSymbolFromNetwork();
-      const eth = web3.utils.fromWei(balance, "ether");
-      document.getElementById("balance").innerText = `${eth} ${symbol}`;
+    async function copyAddress() {
+      const addr = document.getElementById('depositAddress').value;
+      await navigator.clipboard.writeText(addr);
+      alert("Address copied to clipboard");
+    }
 
-      fetch(`https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd`)
-        .then(res => res.json())
-        .then(data => {
-          const usdValue = (parseFloat(eth) * data.ethereum.usd).toFixed(2);
-          document.getElementById("usd").innerText = `USD Value: ~$${usdValue}`;
+    async function withdrawEth() {
+      if (!signer || !provider) return alert("Connect wallet first");
+      const to = document.getElementById('withdrawTo').value.trim();
+      const amount = document.getElementById('withdrawAmount').value.trim();
+      if (!to || !amount) return alert("Fill in both fields");
+      try {
+        const tx = await signer.sendTransaction({
+          to,
+          value: ethers.parseEther(amount)
         });
-    }
-
-    function saveWalletEncrypted() {
-      const pass = document.getElementById("password").value;
-      if (!account) return alert("No wallet");
-      const encrypted = CryptoJS.AES.encrypt(account.privateKey, pass).toString();
-      localStorage.setItem(encryptedPKKey, encrypted);
-      alert("Saved Encrypted Wallet ✅");
-    }
-
-    function loadWalletEncrypted() {
-      const encrypted = localStorage.getItem(encryptedPKKey);
-      if (!encrypted) return;
-      const pass = prompt("Password to load wallet:");
-      try {
-        const decrypted = CryptoJS.AES.decrypt(encrypted, pass).toString(CryptoJS.enc.Utf8);
-        account = web3.eth.accounts.privateKeyToAccount(decrypted);
-        displayWallet();
+        alert("Transaction sent! TX Hash: " + tx.hash);
+        document.getElementById('txHistory').innerHTML += `<li>${tx.hash}</li>`;
+        updateBalance();
       } catch (e) {
-        alert("Failed to decrypt wallet");
+        alert("Transaction failed: " + e.message);
       }
     }
 
-    async function estimateGas() {
-      const to = document.getElementById("to").value;
-      const value = document.getElementById("amount").value;
-      const valueWei = web3.utils.toWei(value, "ether");
-      const gas = await web3.eth.estimateGas({ from: account.address, to: to, value: valueWei });
-      alert(`Estimated Gas: ${gas}`);
-    }
-
-    async function resolveENS(name) {
+    async function switchNetwork() {
+      const selected = document.getElementById('networkSelect').value;
+      let chainId = '0x1'; // Mainnet by default
+      if (selected === 'goerli') chainId = '0x5';
       try {
-        return await web3.eth.ens.getAddress(name);
-      } catch {
-        return null;
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId }],
+        });
+      } catch (e) {
+        alert("Failed to switch network: " + e.message);
       }
     }
+  </script>
+</body>
+</html>
 
-    async function sendTransaction() {
-      const toInput = document.getElementById("to").value;
-      const to = toInput.endsWith(".eth") ? await resolveENS(toInput) : toInput;
-      const value = web3.utils.toWei(document.getElementById("amount").value, "ether");
-      const tx = {
-        from: account.address,
-        to,
-        value,
-        gas: 21000
-      };
-      const signed = await web3.eth.accounts.signTransaction(tx, account.privateKey);
-      const receipt = await web3.eth.sendSignedTransaction(signed.rawTransaction);
-      document.getElementById("history").innerHTML += `<li>Tx: ${receipt.transactionHash}</li>`;
-      getBalance();
-    }
-
-    async function connectMetaMask() {
-      if (window.ethereum) {
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
-        web3 = new Web3(window.ethereum);
-        const accounts = await web3.eth.getAccounts();
-        account = { address: accounts[0] };
-        displayWallet();
-      } else {
-        alert("MetaMask not found");
-      }
-    }
-
-    function downloadEncryptedKey() {
-      const encrypted = localStorage.getItem(encryptedPKKey);
-      const blob = new Blob([encrypted], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "avoda_wallet_backup.txt";
-      a.click();
-    }
-
-    document.getElementById("themeToggle").addEventListener("click", () => {
-      document.body.classList.toggle("light-mode");
-      localStorage.setItem("avoda_theme", document.body.classList.contains("light-mode") ? "light" : "dark");
-    });
-
-    window.onload = () => {
-      initWeb3(document.getElementById("network").value);
-      loadWalletEncrypted();
-      if (localStorage.getItem("avoda_theme") === "light") {
-        document.body.classList.add("light-mode");
-      }
-    }
-  </script></body></html>
