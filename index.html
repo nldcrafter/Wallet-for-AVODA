@@ -2,176 +2,169 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AVODA Wallet</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+  <title>Avoda Wallet</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.8.2/dist/web3.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Poppins', sans-serif;
       margin: 0;
-      background: #f4fdf4;
-      color: #333;
-    }
-    header {
-      background: #16a34a;
+      font-family: 'Inter', sans-serif;
+      background: #0f172a;
       color: white;
-      padding: 1rem 2rem;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
+      flex-direction: column;
+      padding: 30px;
     }
     .container {
-      padding: 2rem;
-      max-width: 600px;
-      margin: auto;
+      width: 100%;
+      max-width: 400px;
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 10px rgba(0,255,0,0.2);
     }
-    .balance-card {
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      padding: 1.5rem;
-      margin-bottom: 2rem;
+    h1 {
+      color: #4ade80;
       text-align: center;
     }
-    .balance-card h2 {
-      margin: 0.5rem 0;
+    button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      font-size: 16px;
+      background: #4ade80;
+      color: #0f172a;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
     }
-    .coin-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
+    button:hover {
+      background: #22c55e;
     }
-    .coin {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #ffffff;
-      padding: 1rem;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    .coin img {
-      width: 32px;
-      height: 32px;
-      margin-right: 1rem;
-    }
-    .dark-mode {
-      background: #0e1c11;
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: none;
+      background: #334155;
       color: white;
     }
-    .toggle {
-      cursor: pointer;
-      padding: 0.3rem 0.8rem;
-      background: #ffffff33;
+    .balance, .history {
+      margin-top: 15px;
+      background: #0f172a;
+      padding: 10px;
       border-radius: 8px;
+    }
+    select {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      background: #334155;
+      color: white;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>AVODA Wallet</h1>
-    <div class="toggle" onclick="toggleDarkMode()">🌓</div>
-  </header>  <div class="container">
-    <div class="balance-card">
-      <h3>Wallet Address:</h3>
-      <p id="wallet-address">0x...</p>
-      <h2>Total Balance</h2>
-      <h1 id="total-balance">$0.00</h1>
-    </div><div class="coin-list" id="coin-list">
-  <!-- Coins will load here -->
+  <div class="container">
+    <h1>Avoda Wallet 🌿</h1>
+    <select id="network">
+      <option value="https://mainnet.infura.io/v3/YOUR_INFURA_ID">Ethereum Mainnet</option>
+      <option value="https://polygon-rpc.com">Polygon</option>
+      <option value="https://bsc-dataseed.binance.org/">Binance Smart Chain</option>
+    </select><button onclick="connectWallet()">🔌 Connect Wallet</button>
+<button onclick="createWallet()">🆕 Create Wallet</button>
+<input id="privateKeyInput" placeholder="Enter Private Key" />
+<button onclick="importWallet()">📥 Import Wallet</button>
+
+<div class="balance">
+  <strong>Balance:</strong>
+  <span id="balance">--</span> ETH
 </div>
 
-  </div>  <script>
-    const walletAddress = "0x0000000000000000000000000000000000000000"; // replace with actual wallet
-    const infuraAPI = "https://mainnet.infura.io/v3/14094fd62eb54b10ba1fdec7958cdbfa";
+<input id="toAddress" placeholder="Receiver Address" />
+<input id="amount" placeholder="Amount in ETH" type="number" />
+<button onclick="sendTransaction()">📤 Send</button>
 
-    const coins = [
-      {
-        name: "Ethereum",
-        symbol: "ETH",
-        address: null,
-        logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
-        decimals: 18
-      },
-      {
-        name: "Tether",
-        symbol: "USDT",
-        address: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-        logo: "https://cryptologos.cc/logos/tether-usdt-logo.png",
-        decimals: 6
-      }
-    ];
+<div class="history">
+  <strong>Transaction History:</strong>
+  <ul id="historyList"></ul>
+</div>
 
-    document.getElementById("wallet-address").textContent = walletAddress;
+  </div><script>
+let web3;
+let account;
+let historyList = [];
 
-    async function fetchETHBalance() {
-      const res = await fetch(infuraAPI, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          method: "eth_getBalance",
-          params: [walletAddress, "latest"],
-          id: 1
-        })
+function connectWallet() {
+  if (window.ethereum) {
+    web3 = new Web3(window.ethereum);
+    window.ethereum.request({ method: 'eth_requestAccounts' })
+      .then(accounts => {
+        account = accounts[0];
+        fetchBalance();
       });
-      const data = await res.json();
-      return parseFloat(parseInt(data.result, 16) / 1e18).toFixed(4);
-    }
+  } else {
+    alert("Install MetaMask");
+  }
+}
 
-    async function fetchTokenBalance(token) {
-      const data = {
-        jsonrpc: "2.0",
-        method: "eth_call",
-        params: [{
-          to: token.address,
-          data: `0x70a08231000000000000000000000000${walletAddress.substring(2)}`
-        }, "latest"],
-        id: 1
-      };
+function createWallet() {
+  const newAccount = web3.eth.accounts.create();
+  alert("New Wallet Address: " + newAccount.address + "\nPrivate Key: " + newAccount.privateKey);
+}
 
-      const res = await fetch(infuraAPI, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-      const result = await res.json();
-      return parseFloat(parseInt(result.result, 16) / 10 ** token.decimals).toFixed(2);
-    }
+function importWallet() {
+  const key = document.getElementById("privateKeyInput").value;
+  if (key) {
+    account = web3.eth.accounts.privateKeyToAccount(key);
+    web3.eth.accounts.wallet.add(account);
+    fetchBalance();
+  }
+}
 
-    async function loadWallet() {
-      let total = 0;
-      const coinList = document.getElementById("coin-list");
-      coinList.innerHTML = "";
+function fetchBalance() {
+  if (!account || !account.address) return;
+  web3.eth.getBalance(account.address).then(balance => {
+    document.getElementById("balance").innerText = web3.utils.fromWei(balance, 'ether');
+  });
+}
 
-      for (const coin of coins) {
-        let balance = 0;
-        if (!coin.address) {
-          balance = await fetchETHBalance();
-          total += balance * 3100; // Example ETH price
-        } else {
-          balance = await fetchTokenBalance(coin);
-          total += balance * 1; // Example USDT is stable
-        }
+function sendTransaction() {
+  const to = document.getElementById("toAddress").value;
+  const amount = document.getElementById("amount").value;
+  if (!to || !amount || !account.address) return;
 
-        const coinDiv = document.createElement("div");
-        coinDiv.className = "coin";
-        coinDiv.innerHTML = `
-          <div style="display:flex; align-items:center;">
-            <img src="${coin.logo}" alt="${coin.symbol}" />
-            <strong>${coin.name}</strong>
-          </div>
-          <span>${balance} ${coin.symbol}</span>
-        `;
-        coinList.appendChild(coinDiv);
-      }
+  web3.eth.sendTransaction({
+    from: account.address,
+    to: to,
+    value: web3.utils.toWei(amount, 'ether')
+  }).then(receipt => {
+    alert("Transaction Sent ✅");
+    historyList.push(`To: ${to}, Amount: ${amount} ETH`);
+    updateHistory();
+    fetchBalance();
+  }).catch(err => alert("❌ " + err.message));
+}
 
-      document.getElementById("total-balance").textContent = `$${total.toFixed(2)}`;
-    }
+function updateHistory() {
+  const list = document.getElementById("historyList");
+  list.innerHTML = "";
+  historyList.slice(-5).reverse().forEach(tx => {
+    const li = document.createElement("li");
+    li.innerText = tx;
+    list.appendChild(li);
+  });
+}
 
-    function toggleDarkMode() {
-      document.body.classList.toggle("dark-mode");
-    }
-
-    loadWallet();
-  </script></body>
+document.getElementById("network").addEventListener("change", function() {
+  const provider = this.value;
+  web3 = new Web3(new Web3.providers.HttpProvider(provider));
+  fetchBalance();
+});
+</script></body>
 </html>
