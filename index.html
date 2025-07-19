@@ -1,630 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Avoda Wallet 🌿</title>
-
-<!-- Ethers.js for wallet and Ethereum interaction -->
-<script src="https://cdn.jsdelivr.net/npm/ethers@6.6.0/dist/ethers.min.js"></script>
-<!-- QRCode.js for QR code generation -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
-<style>
-  /* Reset & base */
-  *, *::before, *::after {box-sizing: border-box;}
-  body, html {
-    margin: 0; padding: 0; height: 100%; background: #0b1a26;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #c1dede;
-    display: flex; justify-content: center; align-items: center;
-  }
-
-  /* Container */
-  #app {
-    background: linear-gradient(135deg, #051620 0%, #003b31 100%);
-    border-radius: 20px;
-    width: 400px;
-    max-width: 95vw;
-    padding: 30px 25px;
-    box-shadow: 0 0 30px #00ff7faa;
-    display: flex; flex-direction: column;
-    user-select: none;
-  }
-
-  h1 {
-    margin: 0 0 25px 0;
-    font-weight: 900;
-    font-size: 2rem;
-    color: #00ff7f;
-    text-align: center;
-    letter-spacing: 3px;
-    text-shadow: 0 0 10px #00ff7f66;
-  }
-
-  /* Screens */
-  .screen {
-    display: none;
-    animation: fadeInUp 0.5s ease forwards;
-  }
-  .screen.active {
-    display: block;
-  }
-  @keyframes fadeInUp {
-    0% {opacity: 0; transform: translateY(20px);}
-    100% {opacity: 1; transform: translateY(0);}
-  }
-
-  /* Buttons */
-  button {
-    background: #00ff7f;
-    border: none;
-    color: #00331a;
-    font-weight: 700;
-    font-size: 1.1rem;
-    padding: 12px 20px;
-    border-radius: 14px;
-    cursor: pointer;
-    transition: background 0.3s ease;
-    width: 100%;
-    margin-top: 15px;
-    box-shadow: 0 0 10px #00ff7faa;
-  }
-  button:hover {
-    background: #00cc66;
-    box-shadow: 0 0 20px #00ff7fff;
-  }
-  button:disabled {
-    background: #006633;
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-
-  /* Inputs */
-  input[type="text"], input[type="password"], input[type="number"], select {
-    width: 100%;
-    padding: 12px 15px;
-    border-radius: 14px;
-    border: none;
-    background: #042822;
-    color: #00ff7f;
-    font-size: 1rem;
-    outline: none;
-    box-shadow: inset 0 0 8px #00ff7f44;
-    transition: box-shadow 0.3s ease;
-  }
-  input::placeholder {
-    color: #00804d99;
-  }
-  input:focus {
-    box-shadow: 0 0 15px #00ff7fff;
-  }
-  select {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=US-ASCII,%3csvg fill='none' stroke='%2300ff7f' stroke-width='2' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3e%3c/path%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 15px center;
-    background-size: 20px 20px;
-  }
-
-  /* PIN inputs */
-  #pinInputs {
-    display: flex;
-    justify-content: center;
-    gap: 18px;
-    margin-top: 15px;
-  }
-  #pinInputs input {
-    width: 50px;
-    font-size: 2.5rem;
-    font-weight: 900;
-    background: #004d33;
-    border-radius: 10px;
-    text-align: center;
-    color: #00ff7f;
-    box-shadow: 0 0 12px #00ff7f99 inset;
-    border: none;
-  }
-  #pinInputs input:focus {
-    box-shadow: 0 0 25px #00ff7fff inset;
-  }
-
-  /* Wallet info */
-  #walletAddress, #walletBalance {
-    background: #004d33cc;
-    padding: 15px 12px;
-    border-radius: 16px;
-    font-weight: 600;
-    text-align: center;
-    margin-top: 15px;
-    font-size: 0.95rem;
-    word-break: break-all;
-    user-select: text;
-    box-shadow: 0 0 10px #00ff7f88;
-  }
-  #walletBalance {
-    font-size: 1.25rem;
-    color: #00ff7f;
-  }
-
-  /* QR code container */
-  #qrcode {
-    margin: 25px auto 15px auto;
-    width: 160px;
-    height: 160px;
-    background: #002211;
-    border-radius: 20px;
-    box-shadow: 0 0 25px #00ff7f99 inset;
-  }
-
-  /* Send transaction inputs */
-  #sendForm label {
-    display: block;
-    font-weight: 600;
-    margin-top: 12px;
-    margin-bottom: 6px;
-    font-size: 0.9rem;
-  }
-  #sendForm input {
-    font-size: 1rem;
-  }
-
-  /* Transaction history */
-  #txHistory {
-    margin-top: 20px;
-    max-height: 160px;
-    overflow-y: auto;
-    background: #002f1a;
-    border-radius: 14px;
-    padding: 12px 15px;
-    box-shadow: inset 0 0 15px #00ff7f99;
-  }
-  #txHistory li {
-    font-size: 0.9rem;
-    margin-bottom: 8px;
-    color: #90ee90;
-    word-break: break-word;
-  }
-
-  /* Nav link */
-  .navLink {
-    margin-top: 20px;
-    text-align: center;
-    color: #00ff7fcc;
-    cursor: pointer;
-    font-weight: 700;
-    text-decoration: underline;
-    user-select: none;
-  }
-  .navLink:hover {
-    color: #00cc66;
-  }
-
-  /* Small loader */
-  .loader {
-    border: 4px solid #004d3322;
-    border-top: 4px solid #00ff7f;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    animation: spin 1s linear infinite;
-    margin: 20px auto 0;
-  }
-  @keyframes spin {
-    0% {transform: rotate(0deg);}
-    100% {transform: rotate(360deg);}
-  }
-</style>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AVODA Futuristic Wallet</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      color: #ffffff;
+    }
+    .screen {
+      display: none;
+      padding: 20px;
+      transition: all 0.5s ease;
+    }
+    .active {
+      display: block;
+    }
+    header {
+      background: #1f1f2e;
+      padding: 10px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      border-bottom: 2px solid #3f3f5a;
+    }
+    nav {
+      background: #141420;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px;
+      border-top: 2px solid #3f3f5a;
+    }
+    nav button {
+      background: #2c3e50;
+      border: none;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    nav button:hover {
+      background: #34495e;
+    }
+    .balance-box {
+      background: #1abc9c;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      margin-top: 20px;
+      font-size: 32px;
+      font-weight: bold;
+      color: #fff;
+    }
+    .qr-box {
+      margin: 30px auto;
+      width: 200px;
+      height: 200px;
+      background: white;
+      border-radius: 20px;
+    }
+    .form-control {
+      margin: 20px 0;
+    }
+    .form-control input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+    }
+    .form-control label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
+  <header>🔐 AVODA Wallet</header>
 
-<div id="app">
+  <div id="home" class="screen active">
+    <div class="balance-box">Balance: 15,300 AVD</div>
+    <div class="qr-box"></div>
+  </div>
 
-  <h1>AVODA WALLET 🌿</h1>
-
-  <!-- PIN Screen -->
-  <section id="screenPin" class="screen active" aria-label="PIN Screen">
-    <p style="text-align:center; font-weight:600;">Enter your 4-digit PIN</p>
-    <div id="pinInputs" role="group" aria-label="PIN input">
-      <input type="password" inputmode="numeric" maxlength="1" id="pin0" aria-label="PIN digit 1" autocomplete="off" />
-      <input type="password" inputmode="numeric" maxlength="1" id="pin1" aria-label="PIN digit 2" autocomplete="off" />
-      <input type="password" inputmode="numeric" maxlength="1" id="pin2" aria-label="PIN digit 3" autocomplete="off" />
-      <input type="password" inputmode="numeric" maxlength="1" id="pin3" aria-label="PIN digit 4" autocomplete="off" />
+  <div id="send" class="screen">
+    <h2>Send AVD</h2>
+    <div class="form-control">
+      <label for="toAddress">To Address:</label>
+      <input type="text" id="toAddress" placeholder="0x123..." />
     </div>
-    <button id="btnUnlock" aria-describedby="pinHelp">Unlock</button>
-    <p id="pinHelp" style="margin-top:10px; font-size:0.85rem; color:#006633; text-align:center;">
-      New user? Create or import wallet below
-    </p>
-    <div style="display:flex; gap:15px; margin-top:12px;">
-      <button id="btnGoCreate" style="flex:1;">Create Wallet</button>
-      <button id="btnGoImport" style="flex:1;">Import Wallet</button>
+    <div class="form-control">
+      <label for="amount">Amount:</label>
+      <input type="number" id="amount" placeholder="100 AVD" />
     </div>
-  </section>
+    <button onclick="alert('Transaction Sent 🚀')">Send</button>
+  </div>
 
-  <!-- Create Wallet Screen -->
-  <section id="screenCreate" class="screen" aria-label="Create Wallet Screen">
-    <button class="navLink" id="btnBackFromCreate" aria-label="Back to PIN Screen">⬅ Back</button>
-    <button id="btnCreateWallet" aria-live="polite" aria-busy="false">🆕 Generate New Wallet</button>
-    <p style="margin-top:12px; font-size:0.9rem; color:#009955;">
-      Your private key will be stored locally and encrypted with your PIN.
-      Keep your PIN and private key safe!
-    </p>
-  </section>
+  <div id="receive" class="screen">
+    <h2>Receive AVD</h2>
+    <p>Your Wallet Address:</p>
+    <code>0xAbCdEf1234567890</code>
+    <div class="qr-box"></div>
+  </div>
 
-  <!-- Import Wallet Screen -->
-  <section id="screenImport" class="screen" aria-label="Import Wallet Screen">
-    <button class="navLink" id="btnBackFromImport" aria-label="Back to PIN Screen">⬅ Back</button>
-    <label for="inputPrivateKey" style="font-weight:700; margin-top:15px;">Enter Private Key</label>
-    <input type="text" id="inputPrivateKey" placeholder="0x..." autocomplete="off" spellcheck="false" aria-required="true" />
-    <button id="btnImportWallet">📥 Import Wallet</button>
-  </section>
+  <div id="transactions" class="screen">
+    <h2>Transactions</h2>
+    <ul>
+      <li>Received 100 AVD - ✔</li>
+      <li>Sent 50 AVD - ✔</li>
+      <li>Received 200 AVD - ✔</li>
+    </ul>
+  </div>
 
-  <!-- Wallet Dashboard Screen -->
-  <section id="screenWallet" class="screen" aria-label="Wallet Dashboard Screen">
-    <button class="navLink" id="btnLogout">⬅ Logout</button>
+  <nav>
+    <button onclick="switchScreen('home')">🏠 Home</button>
+    <button onclick="switchScreen('send')">📤 Send</button>
+    <button onclick="switchScreen('receive')">📥 Receive</button>
+    <button onclick="switchScreen('transactions')">📜 Txns</button>
+  </nav>
 
-    <label for="selectNetwork" style="font-weight:700;">Select Network</label>
-    <select id="selectNetwork" aria-describedby="networkDesc" aria-label="Network select">
-      <option value="https://mainnet.infura.io/v3/your_infura_id">Ethereum Mainnet</option>
-      <option value="https://sepolia.infura.io/v3/your_infura_id">Sepolia Testnet</option>
-      <option value="https://polygon-rpc.com">Polygon</option>
-      <option value="https://bsc-dataseed.binance.org/">Binance Smart Chain</option>
-    </select>
-    <p id="networkDesc" style="font-size:0.85rem; color:#009955; margin-top:4px;">
-      Change network to check balances and send transactions
-    </p>
-
-    <div id="walletAddress" aria-live="polite" aria-atomic="true">Address: --</div>
-    <div id="walletBalance" aria-live="polite" aria-atomic="true">Balance: -- ETH</div>
-
-    <div id="qrcode" role="img" aria-label="QR code of wallet address"></div>
-
-    <form id="sendForm" aria-label="Send Ether Form" novalidate>
-      <label for="inputToAddress">Send To Address</label>
-      <input type="text" id="inputToAddress" placeholder="0x..." required autocomplete="off" spellcheck="false" />
-      <label for="inputAmount">Amount (ETH)</label>
-      <input type="number" id="inputAmount" step="0.0001" min="0.0001" placeholder="0.0" required />
-      <button type="submit" id="btnSendTx">📤 Send Transaction</button>
-    </form>
-
-    <ul id="txHistory" aria-live="polite" aria-atomic="true" style="list-style:none; padding-left:0;"></ul>
-
-  </section>
-</div>
-
-<script>
-(() => {
-  'use strict';
-
-  // Storage keys
-  const STORAGE_PIN = "avoda_pin";
-  const STORAGE_WALLET = "avoda_wallet_enc";
-
-  // Elements
-  const screens = {
-    pin: document.getElementById('screenPin'),
-    create: document.getElementById('screenCreate'),
-    import: document.getElementById('screenImport'),
-    wallet: document.getElementById('screenWallet')
-  };
-
-  const pinInputs = [
-    document.getElementById('pin0'),
-    document.getElementById('pin1'),
-    document.getElementById('pin2'),
-    document.getElementById('pin3')
-  ];
-
-  const btnUnlock = document.getElementById('btnUnlock');
-  const btnGoCreate = document.getElementById('btnGoCreate');
-  const btnGoImport = document.getElementById('btnGoImport');
-  const btnBackFromCreate = document.getElementById('btnBackFromCreate');
-  const btnBackFromImport = document.getElementById('btnBackFromImport');
-  const btnCreateWallet = document.getElementById('btnCreateWallet');
-  const btnImportWallet = document.getElementById('btnImportWallet');
-  const btnLogout = document.getElementById('btnLogout');
-  const selectNetwork = document.getElementById('selectNetwork');
-  const walletAddress = document.getElementById('walletAddress');
-  const walletBalance = document.getElementById('walletBalance');
-  const qrcodeContainer = document.getElementById('qrcode');
-  const sendForm = document.getElementById('sendForm');
-  const inputToAddress = document.getElementById('inputToAddress');
-  const inputAmount = document.getElementById('inputAmount');
-  const txHistoryList = document.getElementById('txHistory');
-  const inputPrivateKey = document.getElementById('inputPrivateKey');
-  const btnSendTx = document.getElementById('btnSendTx');
-
-  // State variables
-  let wallet = null;
-  let provider = null;
-  let networkURL = selectNetwork.value;
-  let txHistory = [];
-
-  // Helpers
-  function showScreen(screen) {
-    Object.values(screens).forEach(s => s.classList.remove('active'));
-    screens[screen].classList.add('active');
-    clearSendForm();
-  }
-
-  function clearSendForm() {
-    inputToAddress.value = "";
-    inputAmount.value = "";
-    btnSendTx.disabled = false;
-  }
-
-  // Pin input autofocus
-  pinInputs.forEach((input, i) => {
-    input.addEventListener('input', () => {
-      if (input.value.length === 1 && i < pinInputs.length - 1) {
-        pinInputs[i+1].focus();
-      }
-    });
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Backspace' && input.value.length === 0 && i > 0) {
-        pinInputs[i-1].focus();
-      }
-    });
-  });
-
-  // Encryption helpers
-  async function encryptPrivateKey(pk, pin) {
-    const encKeyMaterial = await crypto.subtle.importKey(
-      "raw",
-      new TextEncoder().encode(pin),
-      { name: "PBKDF2" },
-      false,
-      ["deriveKey"]
-    );
-    const key = await crypto.subtle.deriveKey(
-      { name: "PBKDF2", salt: new TextEncoder().encode("avoda_salt"), iterations: 100000, hash: "SHA-256" },
-      encKeyMaterial,
-      { name: "AES-GCM", length: 256 },
-      true,
-      ["encrypt", "decrypt"]
-    );
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const encrypted = await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv },
-      key,
-      new TextEncoder().encode(pk)
-    );
-    const buff = new Uint8Array(encrypted);
-    const result = btoa(String.fromCharCode(...iv)) + ":" + btoa(String.fromCharCode(...buff));
-    return result;
-  }
-
-  async function decryptPrivateKey(encrypted, pin) {
-    try {
-      const [ivB64, dataB64] = encrypted.split(":");
-      const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
-      const data = Uint8Array.from(atob(dataB64), c => c.charCodeAt(0));
-      const encKeyMaterial = await crypto.subtle.importKey(
-        "raw",
-        new TextEncoder().encode(pin),
-        { name: "PBKDF2" },
-        false,
-        ["deriveKey"]
-      );
-      const key = await crypto.subtle.deriveKey(
-        { name: "PBKDF2", salt: new TextEncoder().encode("avoda_salt"), iterations: 100000, hash: "SHA-256" },
-        encKeyMaterial,
-        { name: "AES-GCM", length: 256 },
-        true,
-        ["encrypt", "decrypt"]
-      );
-      const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv },
-        key,
-        data
-      );
-      return new TextDecoder().decode(dereturn new TextDecoder().decode(decrypted);
-    } catch (e) {
-      return null; // Decryption failed (wrong PIN or corrupted data)
+  <script>
+    function switchScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
     }
-  }
-
-  // Save encrypted wallet to localStorage
-  async function saveWallet(pk, pin) {
-    const encrypted = await encryptPrivateKey(pk, pin);
-    localStorage.setItem(STORAGE_WALLET, encrypted);
-    localStorage.setItem(STORAGE_PIN, pin);
-  }
-
-  // Load and decrypt wallet from localStorage
-  async function loadWallet(pin) {
-    const encrypted = localStorage.getItem(STORAGE_WALLET);
-    if (!encrypted) return null;
-    const pk = await decryptPrivateKey(encrypted, pin);
-    if (!pk) return null;
-    try {
-      return new ethers.Wallet(pk);
-    } catch {
-      return null;
-    }
-  }
-
-  // Show wallet info (address, balance, QR code)
-  async function updateWalletInfo() {
-    if (!wallet) return;
-    walletAddress.textContent = "Address: " + wallet.address;
-    qrcodeContainer.innerHTML = "";
-    new QRCode(qrcodeContainer, {
-      text: wallet.address,
-      width: 160,
-      height: 160,
-      colorDark: "#00ff7f",
-      colorLight: "#002211",
-      correctLevel: QRCode.CorrectLevel.H
-    });
-
-    provider = new ethers.JsonRpcProvider(networkURL);
-    try {
-      const balance = await provider.getBalance(wallet.address);
-      const ethBalance = ethers.formatEther(balance);
-      walletBalance.textContent = `Balance: ${parseFloat(ethBalance).toFixed(4)} ETH`;
-    } catch {
-      walletBalance.textContent = "Balance: --";
-    }
-  }
-
-  // Add a transaction to history UI
-  function addTxToHistory(tx) {
-    txHistory.unshift(tx);
-    if (txHistory.length > 10) txHistory.pop();
-    renderTxHistory();
-  }
-
-  // Render transaction history list
-  function renderTxHistory() {
-    txHistoryList.innerHTML = "";
-    for (const tx of txHistory) {
-      const li = document.createElement('li');
-      li.textContent = `${tx.date} - To: ${tx.to}, Amount: ${tx.amount} ETH, Status: ${tx.status}`;
-      txHistoryList.appendChild(li);
-    }
-  }
-
-  // Event Handlers
-
-  // Unlock wallet with PIN
-  btnUnlock.addEventListener('click', async () => {
-    const pin = pinInputs.map(i => i.value).join('');
-    if (pin.length !== 4) {
-      alert("Please enter a 4-digit PIN");
-      return;
-    }
-    const loadedWallet = await loadWallet(pin);
-    if (loadedWallet) {
-      wallet = loadedWallet;
-      showScreen('wallet');
-      await updateWalletInfo();
-      txHistory = [];
-      renderTxHistory();
-      pinInputs.forEach(i => i.value = "");
-    } else {
-      alert("Invalid PIN or no wallet found. Please create or import a wallet.");
-    }
-  });
-
-  // Navigate to Create Wallet screen
-  btnGoCreate.addEventListener('click', () => {
-    showScreen('create');
-  });
-
-  // Navigate to Import Wallet screen
-  btnGoImport.addEventListener('click', () => {
-    showScreen('import');
-  });
-
-  // Back from Create Wallet
-  btnBackFromCreate.addEventListener('click', () => {
-    showScreen('pin');
-  });
-
-  // Back from Import Wallet
-  btnBackFromImport.addEventListener('click', () => {
-    showScreen('pin');
-  });
-
-  // Create new wallet and save encrypted
-  btnCreateWallet.addEventListener('click', async () => {
-    const pin = prompt("Enter a new 4-digit PIN to secure your wallet:");
-    if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
-      alert("Invalid PIN. Please enter exactly 4 digits.");
-      return;
-    }
-    wallet = ethers.Wallet.createRandom();
-    await saveWallet(wallet.privateKey, pin);
-    alert("New wallet created and secured with your PIN!\n\nAddress:\n" + wallet.address);
-    showScreen('pin');
-  });
-
-  // Import wallet with private key
-  btnImportWallet.addEventListener('click', async () => {
-    const pk = inputPrivateKey.value.trim();
-    if (!pk) {
-      alert("Please enter a private key");
-      return;
-    }
-    try {
-      wallet = new ethers.Wallet(pk);
-    } catch {
-      alert("Invalid private key");
-      return;
-    }
-    const pin = prompt("Enter a 4-digit PIN to secure your imported wallet:");
-    if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
-      alert("Invalid PIN. Please enter exactly 4 digits.");
-      wallet = null;
-      return;
-    }
-    await saveWallet(wallet.privateKey, pin);
-    alert("Wallet imported and secured with your PIN!\n\nAddress:\n" + wallet.address);
-    inputPrivateKey.value = "";
-    showScreen('pin');
-  });
-
-  // Logout to PIN screen
-  btnLogout.addEventListener('click', () => {
-    wallet = null;
-    provider = null;
-    txHistory = [];
-    renderTxHistory();
-    showScreen('pin');
-  });
-
-  // Network change event
-  selectNetwork.addEventListener('change', async () => {
-    networkURL = selectNetwork.value;
-    if (wallet) {
-      await updateWalletInfo();
-    }
-  });
-
-  // Send transaction (simulated)
-  sendForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!wallet) {
-      alert("No wallet loaded.");
-      return;
-    }
-    const to = inputToAddress.value.trim();
-    const amount = parseFloat(inputAmount.value);
-    if (!to || !ethers.isAddress(to)) {
-      alert("Invalid recipient address");
-      return;
-    }
-    if (isNaN(amount) || amount <= 0) {
-      alert("Enter a valid amount > 0");
-      return;
-    }
-    btnSendTx.disabled = true;
-
-    // Simulate sending transaction for demo (no real tx)
-    // You can implement real send transaction logic here with wallet.connect(provider).sendTransaction()
-
-    const fakeTx = {
-      to,
-      amount: amount.toFixed(4),
-      date: new Date().toLocaleString(),
-      status: "Success (simulated)"
-    };
-    addTxToHistory(fakeTx);
-    alert(`Transaction simulated:\nSent ${fakeTx.amount} ETH to ${fakeTx.to}`);
-
-    clearSendForm();
-    btnSendTx.disabled = false;
-  });
-
-  // On load, show PIN screen
-  showScreen('pin');
-
-})();
-</script>
-
+  </script>
 </body>
 </html>
