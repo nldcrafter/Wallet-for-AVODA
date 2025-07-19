@@ -1,474 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Avoda Wallet 🌿</title>
-<!-- Web3.js -->
-<script src="https://cdn.jsdelivr.net/npm/web3@1.8.2/dist/web3.min.js"></script>
-<!-- CryptoJS for encryption -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-<!-- QRCode.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<style>
-  @keyframes gradientBG {
-    0% {background-position: 0% 50%;}
-    50% {background-position: 100% 50%;}
-    100% {background-position: 0% 50%;}
-  }
-  body {
-    margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    height: 100vh; overflow: hidden;
-    background: linear-gradient(-45deg, #1e3c72, #2a5298, #00b09b, #96c93d);
-    background-size: 400% 400%;
-    animation: gradientBG 15s ease infinite;
-    display: flex; justify-content: center; align-items: center;
-  }
-  .container {
-    background: rgba(20, 30, 40, 0.9);
-    border-radius: 20px;
-    padding: 30px 25px;
-    width: 360px;
-    color: white;
-    box-shadow: 0 0 20px rgba(0,255,128,0.6);
-    position: relative;
-  }
-  h1 {
-    text-align: center;
-    margin-bottom: 25px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-  }
-  .screen {
-    display: none;
-    animation: fadeIn 0.6s ease forwards;
-  }
-  .active {
-    display: block;
-  }
-  @keyframes fadeIn {
-    from {opacity: 0; transform: translateY(20px);}
-    to {opacity: 1; transform: translateY(0);}
-  }
-  input, select {
-    width: 100%;
-    padding: 12px 15px;
-    margin: 12px 0;
-    border-radius: 12px;
-    border: none;
-    background: #223344;
-    color: white;
-    font-size: 15px;
-    outline: none;
-    box-sizing: border-box;
-  }
-  input::placeholder {
-    color: #8ab6d6;
-  }
-  button {
-    width: 100%;
-    padding: 14px;
-    margin: 15px 0 0;
-    border-radius: 12px;
-    border: none;
-    background: #00ff7f;
-    color: #0a0a0a;
-    font-weight: 700;
-    cursor: pointer;
-    font-size: 17px;
-    transition: background 0.3s ease;
-  }
-  button:hover {
-    background: #00cc66;
-  }
-  .btn-row {
-    display: flex;
-    gap: 12px;
-    margin-top: 20px;
-  }
-  .btn-row button {
-    flex: 1;
-  }
-  #qrcode {
-    margin: 20px auto;
-    width: 140px; height: 140px;
-    background: white; border-radius: 20px;
-  }
-  .address-box {
-    background: #0b1a26;
-    padding: 12px;
-    border-radius: 15px;
-    font-size: 14px;
-    word-break: break-all;
-    user-select: all;
-    text-align: center;
-    margin-top: 15px;
-    position: relative;
-  }
-  .balance {
-    margin-top: 15px;
-    font-weight: 700;
-    font-size: 18px;
-    text-align: center;
-    color: #00ff7f;
-  }
-  .pin-inputs {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 20px;
-  }
-  .pin-inputs input {
-    width: 45px;
-    font-size: 28px;
-    font-weight: 700;
-    text-align: center;
-    letter-spacing: 10px;
-  }
-  .nav-link {
-    text-align: center;
-    margin-top: 15px;
-    color: #00cc66;
-    cursor: pointer;
-    user-select: none;
-  }
-  .nav-link:hover {
-    text-decoration: underline;
-  }
-  /* Transaction history */
-  .history {
-    max-height: 140px;
-    overflow-y: auto;
-    background: #122433;
-    padding: 15px;
-    border-radius: 12px;
-    font-size: 13px;
-    margin-top: 20px;
-  }
-  .history strong {
-    display: block;
-    margin-bottom: 10px;
-    color: #00ff7f;
-  }
-  .history ul {
-    list-style: none;
-    padding-left: 10px;
-  }
-  .history ul li {
-    margin-bottom: 6px;
-    color: #a5d6a7;
-  }
-  .copy-btn {
-    position: absolute;
-    right: 10px;
-    top: 10px;
-    background: #00cc66;
-    border: none;
-    padding: 4px 8px;
-    font-size: 12px;
-    color: black;
-    border-radius: 8px;
-    cursor: pointer;
-    user-select: none;
-  }
-  .copy-btn:hover {
-    background: #00ff7f;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AVODA Wallet</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3@4.1.2/dist/web3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <style>
+    body {
+      background: #000;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      max-width: 400px;
+      margin: auto;
+      padding: 30px;
+      background: #111;
+      border-radius: 20px;
+      box-shadow: 0 0 15px rgba(255,255,255,0.1);
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 10px;
+      border: none;
+      font-size: 1rem;
+    }
+    button {
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #ccc;
+    }
+    .qr {
+      margin: 20px auto;
+    }
+    .copy-btn {
+      margin-top: 5px;
+      background: #444;
+      color: #fff;
+    }
+    .screen { display: none; }
+  </style>
 </head>
 <body>
-  <div class="container">
+  <div id="unlockScreen" class="container screen" style="display: block;">
+    <h2>🔐 Unlock Wallet</h2>
+    <input type="password" id="pinInput" placeholder="Enter 4-digit PIN"/>
+    <button id="unlockBtn">Unlock</button>
+  </div>
 
-    <h1>Avoda Wallet 🌿</h1>
+  <div id="walletScreen" class="container screen">
+    <h2>🚀 AVODA Wallet</h2>
+    <select id="networkSelect">
+      <option value="https://ethereum-sepolia.publicnode.com">Ethereum Sepolia</option>
+      <option value="https://polygon-mumbai.publicnode.com">Polygon Mumbai</option>
+      <option value="https://bsc-testnet.publicnode.com">BNB Testnet</option>
+    </select>
 
-    <!-- PIN screen -->
-    <div id="pinScreen" class="screen active">
-      <p style="text-align:center; font-weight:600;">Enter 4-digit PIN to unlock wallet</p>
-      <div class="pin-inputs">
-        <input maxlength="1" type="password" inputmode="numeric" pattern="[0-9]*" id="pin1" />
-        <input maxlength="1" type="password" inputmode="numeric" pattern="[0-9]*" id="pin2" />
-        <input maxlength="1" type="password" inputmode="numeric" pattern="[0-9]*" id="pin3" />
-        <input maxlength="1" type="password" inputmode="numeric" pattern="[0-9]*" id="pin4" />
-      </div>
-      <button id="pinSubmitBtn">Unlock</button>
-      <p style="text-align:center; margin-top: 10px; font-size: 14px; color: #a6ffa6;">If new, create wallet or import below</p>
-      <div class="btn-row" style="margin-top: 10px;">
-        <button onclick="showScreen('createScreen')">Create Wallet</button>
-        <button onclick="showScreen('importScreen')">Import Wallet</button>
-      </div>
-    </div>
+    <div id="addressBox"></div>
+    <button class="copy-btn" onclick="copyToClipboard(address)">📋 Copy Address</button>
+    <div class="qr" id="qrCode"></div>
 
-    <!-- Create Wallet screen -->
-    <div id="createScreen" class="screen">
-      <button onclick="showScreen('pinScreen')" style="margin-bottom: 10px;">⬅ Back</button>
-      <button id="createWalletBtn">🆕 Create New Wallet</button>
-    </div>
+    <div id="privateKeyBox"></div>
+    <button class="copy-btn" onclick="copyToClipboard(privateKey)">📋 Copy Private Key</button>
 
-    <!-- Import Wallet screen -->
-    <div id="importScreen" class="screen">
-      <button onclick="showScreen('pinScreen')" style="margin-bottom: 10px;">⬅ Back</button>
-      <label>Enter Private Key</label>
-      <input id="importPrivateKey" placeholder="0x..." autocomplete="off" />
-      <button id="importWalletBtn">📥 Import Wallet</button>
-    </div>
+    <p id="balanceBox">Balance: ...</p>
 
-    <!-- Wallet screen -->
-    <div id="walletScreen" class="screen">
-      <button onclick="logout()" style="margin-bottom: 15px;">⬅ Logout</button>
-      <label>Network</label>
-      <select id="networkSelect">
-        <option value="https://mainnet.infura.io/v3/YOUR_INFURA_ID">Ethereum Mainnet</option>
-        <option value="https://polygon-rpc.com">Polygon</option>
-        <option value="https://bsc-dataseed.binance.org/">Binance Smart Chain</option>
-      </select>
+    <h3>📤 Send ETH</h3>
+    <input type="text" id="toAddress" placeholder="To Address"/>
+    <input type="text" id="amount" placeholder="Amount in ETH"/>
+    <button id="sendTxBtn">Send</button>
 
-      <div class="address-box" id="walletAddress">
-        Address: --
-        <button class="copy-btn" id="copyAddressBtn" title="Copy Address">Copy</button>
-      </div>
-      <div class="address-box" id="walletPrivateKey" style="margin-top: 8px; font-size: 12px; user-select:none;">
-        Private Key: <em>hidden for security</em>
-        <button class="copy-btn" id="copyPKBtn" title="Copy Private Key">Copy</button>
-      </div>
-      <div class="balance" id="walletBalance">Balance: -- ETH</div>
+    <h3>📜 History</h3>
+    <div id="historyBox">No history yet.</div>
+  </div>
 
-      <div id="qrcode"></div>
-
-      <label>Send To Address</label>
-      <input id="sendTo" placeholder="0x..." autocomplete="off" />
-      <label>Amount (ETH)</label>
-      <input id="sendAmount" type="number" step="0.0001" placeholder="0.0" />
-
-      <button id="sendTxBtn">📤 Send Transaction</button>
-
-      <div class="history">
-        <strong>Transaction History</strong>
-        <ul id="txHistory"></ul>
-      </div>
-    </div>
+  <div id="setupScreen" class="container screen">
+    <h2>🛠️ Setup Wallet</h2>
+    <input type="password" id="newPin" placeholder="Set 4-digit PIN"/>
+    <button id="createWalletBtn">➕ Create Wallet</button>
+    <button id="importWalletBtn">📥 Import Wallet</button>
   </div>
 
 <script>
-  let web3;
-  let account;
-  let txHistory = [];
-  const STORAGE_KEY = "avoda_wallet_encrypted_pk";
-  const STORAGE_PIN = "avoda_wallet_pin";
+  let web3, account;
+  let privateKey = "";
+  let address = "";
 
   function showScreen(id) {
-    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-    document.getElementById(id).classList.add("active");
+    document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+    document.getElementById(id).style.display = 'block';
   }
 
-  // PIN input auto-focus
-  const pinInputs = [...document.querySelectorAll(".pin-inputs input")];
-  pinInputs.forEach((input, i) => {
-    input.addEventListener("input", () => {
-      if (input.value.length === 1 && i < pinInputs.length -1) {
-        pinInputs[i+1].focus();
-      }
-    });
-  });
+  function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => alert("Copied!"));
+  }
 
-  function savePin(pin) {
-    localStorage.setItem(STORAGE_PIN, pin);
+  function encrypt(text, pin) {
+    return CryptoJS.AES.encrypt(text, pin).toString();
   }
-  function getSavedPin() {
-    return localStorage.getItem(STORAGE_PIN);
-  }
-  function encryptPK(pk, pin) {
-    return CryptoJS.AES.encrypt(pk, pin).toString();
-  }
-  function decryptPK(encPk, pin) {
+
+  function decrypt(cipher, pin) {
     try {
-      const bytes = CryptoJS.AES.decrypt(encPk, pin);
-      return bytes.toString(CryptoJS.enc.Utf8);
+      return CryptoJS.AES.decrypt(cipher, pin).toString(CryptoJS.enc.Utf8);
     } catch {
       return null;
     }
   }
-  function saveWallet(pk, pin) {
-    const enc = encryptPK(pk, pin);
-    localStorage.setItem(STORAGE_KEY, enc);
+
+  function saveEncryptedWallet(pk, pin) {
+    localStorage.setItem("wallet", encrypt(pk, pin));
   }
-  function loadWallet(pin) {
-    const enc = localStorage.getItem(STORAGE_KEY);
-    if (!enc) return null;
-    const pk = decryptPK(enc, pin);
-    if (!pk) return null;
-    return pk;
+
+  function getSavedPin() {
+    return localStorage.getItem("pin");
   }
-  function updateQRCode(text) {
-    const qrContainer = document.getElementById("qrcode");
-    qrContainer.innerHTML = "";
-    if (!text) return;
-    new QRCode(qrContainer, {
-      text: text,
-      width: 140,
-      height: 140,
-      colorDark: "#0b1a26",
-      colorLight: "#4ade80",
-      correctLevel: QRCode.CorrectLevel.H
-    });
+
+  function savePin(pin) {
+    localStorage.setItem("pin", pin);
   }
-  async function updateBalance() {
-    if (!account || !account.address) {
-      document.getElementById("walletBalance").innerText = "Balance: --";
-      return;
-    }
-    try {
-      const balanceWei = await web3.eth.getBalance(account.address);
-      const balanceEth = web3.utils.fromWei(balanceWei, "ether");
-      document.getElementById("walletBalance").innerText = "Balance: " + Number(balanceEth).toFixed(5) + " ETH";
-    } catch {
-      document.getElementById("walletBalance").innerText = "Balance: Error";
-    }
-  }
-  function showAccountInfo() {
-    document.getElementById("walletAddress").innerText = "Address: " + account.address;
-    // Also update the copy buttons visibility
-    document.getElementById("walletAddress").appendChild(document.getElementById("copyAddressBtn"));
-    // Show private key hidden
-    document.getElementById("walletPrivateKey").innerHTML = `Private Key: <em>hidden for security</em>`;
-    document.getElementById("walletPrivateKey").appendChild(document.getElementById("copyPKBtn"));
-    updateQRCode(account.address);
-    updateBalance();
-  }
-  async function initWeb3(rpcUrl) {
-    web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl));
+
+  async function initWeb3(rpc) {
+    web3 = new Web3(rpc);
   }
 
   async function createNewWallet(pin) {
-    if (!web3) await initWeb3(document.getElementById("networkSelect").value);
     account = web3.eth.accounts.create();
-    saveWallet(account.privateKey, pin);
-    alert("Wallet created!\n\nAddress:\n" + account.address + "\n\nSave your private key safely!");
+    privateKey = account.privateKey;
+    address = account.address;
+    saveEncryptedWallet(privateKey, pin);
     showAccountInfo();
     showScreen("walletScreen");
   }
 
   async function importWalletByPK(pin) {
-    const pk = document.getElementById("importPrivateKey").value.trim();
-    if (!pk || !pk.startsWith("0x") || pk.length !== 66) {
-      alert("Please enter a valid private key starting with 0x and 64 hex characters.");
-      return;
-    }
-    if (!web3) await initWeb3(document.getElementById("networkSelect").value);
-    try {
-      account = web3.eth.accounts.privateKeyToAccount(pk);
-      saveWallet(account.privateKey, pin);
-      alert("Wallet imported!\n\nAddress:\n" + account.address);
-      showAccountInfo();
-      showScreen("walletScreen");
-    } catch {
-      alert("Invalid private key");
-    }
+    const pk = prompt("Paste your Private Key:");
+    if (!pk || !pk.startsWith("0x")) return alert("Invalid private key.");
+    account = web3.eth.accounts.privateKeyToAccount(pk);
+    privateKey = pk;
+    address = account.address;
+    saveEncryptedWallet(pk, pin);
+    showAccountInfo();
+    showScreen("walletScreen");
+  }
+
+  async function showAccountInfo() {
+    address = account.address;
+    privateKey = account.privateKey;
+
+    document.getElementById("addressBox").innerText = "Address: " + address;
+    document.getElementById("privateKeyBox").innerText = "Private Key: " + privateKey;
+
+    QRCode.toCanvas(document.getElementById("qrCode"), address);
+
+    const bal = await web3.eth.getBalance(address);
+    document.getElementById("balanceBox").innerText = "Balance: " + web3.utils.fromWei(bal) + " ETH";
   }
 
   async function sendTransaction() {
-    if (!account) {
-      alert("No wallet connected!");
-      return;
-    }
-    if (!window.ethereum) {
-      alert("No Ethereum provider found (like MetaMask). Please install or connect your wallet.");
-      return;
-    }
-    const to = document.getElementById("sendTo").value.trim();
-    const amount = document.getElementById("sendAmount").value.trim();
-    if (!web3.utils.isAddress(to)) {
-      alert("Invalid recipient address.");
-      return;
-    }
-    if (isNaN(amount) || Number(amount) <= 0) {
-      alert("Enter a valid amount.");
-      return;
-    }
-    try {
-      const valueWei = web3.utils.toWei(amount, "ether");
-      const txParams = {
-        from: account.address,
-        to: to,
-        value: valueWei,
-        gas: "21000",
-        gasPrice: web3.utils.toWei("8", "gwei"),
-      };
-      await window.ethereum.request({
-        method: "eth_sendTransaction",
-        params: [txParams],
-      });
-      alert("Transaction sent!");
-      txHistory.push(`Sent ${amount} ETH to ${to}`);
-      updateTxHistory();
-      updateBalance();
-    } catch (err) {
-      alert("Transaction failed: " + err.message);
-    }
+    const to = document.getElementById("toAddress").value;
+    const amt = document.getElementById("amount").value;
+    const tx = {
+      to,
+      value: web3.utils.toWei(amt),
+      gas: 21000,
+      maxFeePerGas: web3.utils.toWei('8', 'gwei'),
+      maxPriorityFeePerGas: web3.utils.toWei('2', 'gwei')
+    };
+
+    const signed = await web3.eth.accounts.signTransaction(tx, privateKey);
+    const res = await web3.eth.sendSignedTransaction(signed.rawTransaction);
+    document.getElementById("historyBox").innerHTML += `<p>✅ Tx: <a href="#" target="_blank">${res.transactionHash}</a></p>`;
+    await showAccountInfo();
   }
 
-  function updateTxHistory() {
-    const list = document.getElementById("txHistory");
-    list.innerHTML = "";
-    txHistory.slice(-5).reverse().forEach(tx => {
-      const li = document.createElement("li");
-      li.textContent = tx;
-      list.appendChild(li);
-    });
-  }
+  document.getElementById("unlockBtn").addEventListener("click", () => {
+    const pin = document.getElementById("pinInput").value;
+    const cipher = localStorage.getItem("wallet");
+    if (!cipher) return showScreen("setupScreen");
 
-  function logout() {
-    account = null;
-    txHistory = [];
-    document.getElementById("importPrivateKey").value = "";
-    document.getElementById("sendTo").value = "";
-    document.getElementById("sendAmount").value = "";
-    document.getElementById("walletBalance").innerText = "Balance: --";
-    document.getElementById("walletAddress").innerText = "Address: --";
-    document.getElementById("walletPrivateKey").innerHTML = `Private Key: <em>hidden for security</em>`;
-    document.getElementById("qrcode").innerHTML = "";
-    showScreen("pinScreen");
-  }
-
-  // Copy buttons handlers
-  document.getElementById("copyAddressBtn").addEventListener("click", () => {
-    if (!account) return alert("No wallet to copy address.");
-    navigator.clipboard.writeText(account.address).then(() => {
-      alert("Address copied to clipboard!");
-    });
-  });
-  document.getElementById("copyPKBtn").addEventListener("click", () => {
-    if (!account) return alert("No wallet to copy private key.");
-    const confirmCopy = confirm("Are you sure you want to copy your PRIVATE KEY? Keep it safe and do not share.");
-    if (confirmCopy) {
-      navigator.clipboard.writeText(account.privateKey).then(() => {
-        alert("Private Key copied to clipboard!");
-      });
-    }
-  });
-
-  // Event listeners
-  document.getElementById("pinSubmitBtn").addEventListener("click", () => {
-    const pin = pinInputs.map(i => i.value).join("");
-    if (pin.length !== 4) {
-      alert("Enter 4-digit PIN");
-      return;
-    }
-    const savedPin = getSavedPin();
-    if (!savedPin) {
-      // First time, save pin and create empty wallet
+    const pk = decrypt(cipher, pin);
+    if (pk && pk.startsWith("0x")) {
       savePin(pin);
-      alert("PIN saved! Now create or import your wallet.");
-      showScreen("pinScreen");
-    } else if (pin === savedPin) {
-      // Load wallet and show wallet screen
-      const pk = loadWallet(pin);
-      if (!pk) {
-        alert("No wallet found for this PIN. Create or import a wallet.");
-        showScreen("pinScreen");
-        return;
-      }
-      if (!web3) initWeb3(document.getElementById("networkSelect").value);
       account = web3.eth.accounts.privateKeyToAccount(pk);
+      privateKey = pk;
+      address = account.address;
       showAccountInfo();
       showScreen("walletScreen");
     } else {
@@ -477,14 +202,16 @@
   });
 
   document.getElementById("createWalletBtn").addEventListener("click", async () => {
-    const pin = getSavedPin();
-    if (!pin) return alert("Set your 4-digit PIN first on unlock screen.");
+    const pin = document.getElementById("newPin").value;
+    if (pin.length !== 4) return alert("PIN must be 4 digits.");
+    savePin(pin);
     await createNewWallet(pin);
   });
 
   document.getElementById("importWalletBtn").addEventListener("click", async () => {
-    const pin = getSavedPin();
-    if (!pin) return alert("Set your 4-digit PIN first on unlock screen.");
+    const pin = document.getElementById("newPin").value;
+    if (pin.length !== 4) return alert("PIN must be 4 digits.");
+    savePin(pin);
     await importWalletByPK(pin);
   });
 
@@ -496,10 +223,9 @@
     showAccountInfo();
   });
 
-  // Initialize default network on page load
   window.addEventListener("load", () => {
     initWeb3(document.getElementById("networkSelect").value);
   });
 </script>
 </body>
-</html>
+      </html>
