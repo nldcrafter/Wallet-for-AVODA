@@ -1,180 +1,342 @@
-<!DOCTYPE html><html lang="en"><head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Avoda Wallet</title>
   <style>
-    * {
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f3f4f6;
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }body {
-  background: #0d0d0d;
-  color: white;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 1rem;
-}
-
-header {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 0;
-}
-
-.logo {
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #00ffe7;
-}
-
-.network {
-  background: #1a1a1a;
-  border: 1px solid #333;
-  color: white;
-  padding: 0.5rem;
-  border-radius: 8px;
-}
-
-.wallet-info {
-  margin-top: 2rem;
-  background: #1a1a1a;
-  padding: 1rem;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 500px;
-  text-align: center;
-}
-
-.balance {
-  font-size: 2rem;
-  margin: 1rem 0;
-}
-
-.address, .qr {
-  margin: 0.5rem 0;
-}
-
-.buttons {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 1rem;
-}
-
-button {
-  background: #00ffe7;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  color: #0d0d0d;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-button:hover {
-  background: #00c6ad;
-}
-
-.tx-list {
-  margin-top: 2rem;
-  width: 100%;
-  max-width: 500px;
-}
-
-.tx-item {
-  background: #1f1f1f;
-  padding: 1rem;
-  margin: 0.5rem 0;
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-}
-
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal.active {
-  display: flex;
-}
-
-.modal-content {
-  background: #1a1a1a;
-  padding: 2rem;
-  border-radius: 12px;
-  text-align: center;
-}
-
-.modal-content input {
-  margin-top: 1rem;
-  padding: 0.5rem;
-  width: 100%;
-}
-
+    }
+    header {
+      background-color: #111827;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .section {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #111827;
+    }
+    .input, .button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+    }
+    .button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .button:hover {
+      background-color: #1d4ed8;
+    }
+    .network {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .network button {
+      flex: 1;
+      min-width: 100px;
+    }
+    .qr {
+      margin: 20px 0;
+      text-align: center;
+    }
+    .balance {
+      font-size: 32px;
+      font-weight: bold;
+      color: #10b981;
+    }
+    .tx {
+      font-family: monospace;
+      background: #f9fafb;
+      padding: 10px;
+      border-radius: 8px;
+      overflow-x: auto;
+      max-height: 300px;
+    }
   </style>
-</head><body>
+</head>
+<body>
   <header>
-    <div class="logo">Avoda Wallet</div>
-    <select class="network">
-      <option>AvodaNet</option>
-      <option>Ethereum</option>
-      <option>BSC</option>
-    </select>
-  </header>  <div class="wallet-info">
-    <div class="balance">1,293.43 AVD</div>
-    <div class="address">0xA1b2...9XyZ</div>
-    <div class="qr"><img src="https://api.qrserver.com/v1/create-qr-code/?data=0xA1b2...9XyZ&size=100x100" alt="QR Code"></div>
-    <div class="buttons">
-      <button onclick="openModal('send')">Send</button>
-      <button onclick="openModal('receive')">Receive</button>
-    </div>
-  </div>  <div class="tx-list">
-    <div class="tx-item">
-      <span>Received</span>
-      <span>+250 AVD</span>
-    </div>
-    <div class="tx-item">
-      <span>Sent</span>
-      <span>-100 AVD</span>
-    </div>
-    <div class="tx-item">
-      <span>Received</span>
-      <span>+50 AVD</span>
-    </div>
-  </div>  <div class="modal" id="modal-send">
-    <div class="modal-content">
-      <h3>Send AVD</h3>
-      <input type="text" placeholder="Recipient Address" /><br>
-      <input type="number" placeholder="Amount" /><br>
-      <button onclick="closeModal('send')">Send Now</button>
-    </div>
-  </div>  <div class="modal" id="modal-receive">
-    <div class="modal-content">
-      <h3>Your Address</h3>
-      <p>0xA1b2...9XyZ</p>
-      <img src="https://api.qrserver.com/v1/create-qr-code/?data=0xA1b2...9XyZ&size=150x150" alt="QR Code">
-      <button onclick="closeModal('receive')">Close</button>
-    </div>
-  </div>  <script>
-    function openModal(type) {
-      document.getElementById(`modal-${type}`).classList.add('active');
-    }
+    <h1>🔐 Avoda Wallet</h1>
+    <p>Secure. Fast. Smart.</p>
+  </header>
 
-    function closeModal(type) {
-      document.getElementById(`modal-${type}`).classList.remove('active');
-    }
-  </script></body></html>
+  <div class="container">
+    <div class="section">
+      <div class="title">Enter PIN to Unlock</div>
+      <input class="input" type="password" placeholder="Enter your PIN" />
+      <button class="button">Unlock</button>
+    </div>
+
+    <div class="section">
+      <div class="title">Create / Import Wallet</div>
+      <input class="input" placeholder="Enter mnemonic or new password" />
+      <button class="button">Create Wallet</button>
+      <button class="button">Import Wallet</button>
+    </div>
+
+    <div class="section">
+      <div class="title">Select Network</div>
+      <div class="network">
+        <button class="button">Ethereum</button>
+        <button class="button">BSC</button>
+        <button class="button">Polygon</button>
+        <button class="button">AVAX</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="title">Wallet Balance</div>
+      <div class="balance">Ξ 8.45 ETH</div>
+    </div>
+
+    <div class="section">
+      <div class="title">Send / Receive</div>
+      <input class="input" placeholder="Recipient address" />
+      <input class="input" placeholder="Amount" />
+      <button class="button">Send</button>
+      <button class="button">Receive</button>
+    </div>
+
+    <div class="section qr">
+      <div class="title">QR Code</div>
+      <img src="https://api.qrserver.com/v1/create-qr-code/?data=0xYourAddressHere&size=150x150" alt="QR Code" />
+    </div>
+
+    <div class="section">
+      <div class="title">Transaction History</div>
+      <div class="tx">
+        Tx #0: 0xABCDEF123456789000 → Ξ0.0 ETH
+        Tx #1: 0xABCDEF123456789001 → Ξ0.1 ETH
+        Tx #2: 0xABCDEF123456789002 → Ξ0.2 ETH
+        Tx #3: 0xABCDEF123456789003 → Ξ0.3 ETH
+        Tx #4: 0xABCDEF123456789004 → Ξ0.4 ETH
+        Tx #5: 0xABCDEF123456789005 → Ξ0.5 ETH
+        Tx #6: 0xABCDEF123456789006 → Ξ0.6 ETH
+        Tx #7: 0xABCDEF123456789007 → Ξ0.7 ETH
+        Tx #8: 0xABCDEF123456789008 → Ξ0.8 ETH
+        Tx #9: 0xABCDEF123456789009 → Ξ0.9 ETH
+        Tx #10: 0xABCDEF12345678900A → Ξ0.0 ETH
+        Tx #11: 0xABCDEF12345678900B → Ξ0.1 ETH
+        Tx #12: 0xABCDEF12345678900C → Ξ0.2 ETH
+        Tx #13: 0xABCDEF12345678900D → Ξ0.3 ETH
+        Tx #14: 0xABCDEF12345678900E → Ξ0.4 ETH
+        Tx #15: 0xABCDEF12345678900F → Ξ0.5 ETH
+        Tx #16: 0xABCDEF123456789010 → Ξ0.6 ETH
+        Tx #17: 0xABCDEF123456789011 → Ξ0.7 ETH
+        Tx #18: 0xABCDEF123456789012 → Ξ0.8 ETH
+        Tx #19: 0xABCDEF123456789013 → Ξ0.9 ETH
+        Tx #20: 0xABCDEF123456789014 → Ξ0.0 ETH
+        Tx #21: 0xABCDEF123456789015 → Ξ0.1 ETH
+        Tx #22: 0xABCDEF123456789016 → Ξ0.2 ETH
+        Tx #23: 0xABCDEF123456789017 → Ξ0.3 ETH
+        Tx #24: 0xABCDEF123456789018 → Ξ0.4 ETH
+        Tx #25: 0xABCDEF123456789019 → Ξ0.5 ETH
+        Tx #26: 0xABCDEF12345678901A → Ξ0.6 ETH
+        Tx #27: 0xABCDEF12345678901B → Ξ0.7 ETH
+        Tx #28: 0xABCDEF12345678901C → Ξ0.8 ETH
+        Tx #29: 0xABCDEF12345678901D → Ξ0.9 ETH
+        Tx #30: 0xABCDEF12345678901E → Ξ0.0 ETH
+        Tx #31: 0xABCDEF12345678901F → Ξ0.1 ETH
+        Tx #32: 0xABCDEF123456789020 → Ξ0.2 ETH
+        Tx #33: 0xABCDEF123456789021 → Ξ0.3 ETH
+        Tx #34: 0xABCDEF123456789022 → Ξ0.4 ETH
+        Tx #35: 0xABCDEF123456789023 → Ξ0.5 ETH
+        Tx #36: 0xABCDEF123456789024 → Ξ0.6 ETH
+        Tx #37: 0xABCDEF123456789025 → Ξ0.7 ETH
+        Tx #38: 0xABCDEF123456789026 → Ξ0.8 ETH
+        Tx #39: 0xABCDEF123456789027 → Ξ0.9 ETH
+        Tx #40: 0xABCDEF123456789028 → Ξ0.0 ETH
+        Tx #41: 0xABCDEF123456789029 → Ξ0.1 ETH
+        Tx #42: 0xABCDEF12345678902A → Ξ0.2 ETH
+        Tx #43: 0xABCDEF12345678902B → Ξ0.3 ETH
+        Tx #44: 0xABCDEF12345678902C → Ξ0.4 ETH
+        Tx #45: 0xABCDEF12345678902D → Ξ0.5 ETH
+        Tx #46: 0xABCDEF12345678902E → Ξ0.6 ETH
+        Tx #47: 0xABCDEF12345678902F → Ξ0.7 ETH
+        Tx #48: 0xABCDEF123456789030 → Ξ0.8 ETH
+        Tx #49: 0xABCDEF123456789031 → Ξ0.9 ETH
+        Tx #50: 0xABCDEF123456789032 → Ξ0.0 ETH
+        Tx #51: 0xABCDEF123456789033 → Ξ0.1 ETH
+        Tx #52: 0xABCDEF123456789034 → Ξ0.2 ETH
+        Tx #53: 0xABCDEF123456789035 → Ξ0.3 ETH
+        Tx #54: 0xABCDEF123456789036 → Ξ0.4 ETH
+        Tx #55: 0xABCDEF123456789037 → Ξ0.5 ETH
+        Tx #56: 0xABCDEF123456789038 → Ξ0.6 ETH
+        Tx #57: 0xABCDEF123456789039 → Ξ0.7 ETH
+        Tx #58: 0xABCDEF12345678903A → Ξ0.8 ETH
+        Tx #59: 0xABCDEF12345678903B → Ξ0.9 ETH
+        Tx #60: 0xABCDEF12345678903C → Ξ0.0 ETH
+        Tx #61: 0xABCDEF12345678903D → Ξ0.1 ETH
+        Tx #62: 0xABCDEF12345678903E → Ξ0.2 ETH
+        Tx #63: 0xABCDEF12345678903F → Ξ0.3 ETH
+        Tx #64: 0xABCDEF123456789040 → Ξ0.4 ETH
+        Tx #65: 0xABCDEF123456789041 → Ξ0.5 ETH
+        Tx #66: 0xABCDEF123456789042 → Ξ0.6 ETH
+        Tx #67: 0xABCDEF123456789043 → Ξ0.7 ETH
+        Tx #68: 0xABCDEF123456789044 → Ξ0.8 ETH
+        Tx #69: 0xABCDEF123456789045 → Ξ0.9 ETH
+        Tx #70: 0xABCDEF123456789046 → Ξ0.0 ETH
+        Tx #71: 0xABCDEF123456789047 → Ξ0.1 ETH
+        Tx #72: 0xABCDEF123456789048 → Ξ0.2 ETH
+        Tx #73: 0xABCDEF123456789049 → Ξ0.3 ETH
+        Tx #74: 0xABCDEF12345678904A → Ξ0.4 ETH
+        Tx #75: 0xABCDEF12345678904B → Ξ0.5 ETH
+        Tx #76: 0xABCDEF12345678904C → Ξ0.6 ETH
+        Tx #77: 0xABCDEF12345678904D → Ξ0.7 ETH
+        Tx #78: 0xABCDEF12345678904E → Ξ0.8 ETH
+        Tx #79: 0xABCDEF12345678904F → Ξ0.9 ETH
+        Tx #80: 0xABCDEF123456789050 → Ξ0.0 ETH
+        Tx #81: 0xABCDEF123456789051 → Ξ0.1 ETH
+        Tx #82: 0xABCDEF123456789052 → Ξ0.2 ETH
+        Tx #83: 0xABCDEF123456789053 → Ξ0.3 ETH
+        Tx #84: 0xABCDEF123456789054 → Ξ0.4 ETH
+        Tx #85: 0xABCDEF123456789055 → Ξ0.5 ETH
+        Tx #86: 0xABCDEF123456789056 → Ξ0.6 ETH
+        Tx #87: 0xABCDEF123456789057 → Ξ0.7 ETH
+        Tx #88: 0xABCDEF123456789058 → Ξ0.8 ETH
+        Tx #89: 0xABCDEF123456789059 → Ξ0.9 ETH
+        Tx #90: 0xABCDEF12345678905A → Ξ0.0 ETH
+        Tx #91: 0xABCDEF12345678905B → Ξ0.1 ETH
+        Tx #92: 0xABCDEF12345678905C → Ξ0.2 ETH
+        Tx #93: 0xABCDEF12345678905D → Ξ0.3 ETH
+        Tx #94: 0xABCDEF12345678905E → Ξ0.4 ETH
+        Tx #95: 0xABCDEF12345678905F → Ξ0.5 ETH
+        Tx #96: 0xABCDEF123456789060 → Ξ0.6 ETH
+        Tx #97: 0xABCDEF123456789061 → Ξ0.7 ETH
+        Tx #98: 0xABCDEF123456789062 → Ξ0.8 ETH
+        Tx #99: 0xABCDEF123456789063 → Ξ0.9 ETH
+        Tx #100: 0xABCDEF123456789064 → Ξ0.0 ETH
+        Tx #101: 0xABCDEF123456789065 → Ξ0.1 ETH
+        Tx #102: 0xABCDEF123456789066 → Ξ0.2 ETH
+        Tx #103: 0xABCDEF123456789067 → Ξ0.3 ETH
+        Tx #104: 0xABCDEF123456789068 → Ξ0.4 ETH
+        Tx #105: 0xABCDEF123456789069 → Ξ0.5 ETH
+        Tx #106: 0xABCDEF12345678906A → Ξ0.6 ETH
+        Tx #107: 0xABCDEF12345678906B → Ξ0.7 ETH
+        Tx #108: 0xABCDEF12345678906C → Ξ0.8 ETH
+        Tx #109: 0xABCDEF12345678906D → Ξ0.9 ETH
+        Tx #110: 0xABCDEF12345678906E → Ξ0.0 ETH
+        Tx #111: 0xABCDEF12345678906F → Ξ0.1 ETH
+        Tx #112: 0xABCDEF123456789070 → Ξ0.2 ETH
+        Tx #113: 0xABCDEF123456789071 → Ξ0.3 ETH
+        Tx #114: 0xABCDEF123456789072 → Ξ0.4 ETH
+        Tx #115: 0xABCDEF123456789073 → Ξ0.5 ETH
+        Tx #116: 0xABCDEF123456789074 → Ξ0.6 ETH
+        Tx #117: 0xABCDEF123456789075 → Ξ0.7 ETH
+        Tx #118: 0xABCDEF123456789076 → Ξ0.8 ETH
+        Tx #119: 0xABCDEF123456789077 → Ξ0.9 ETH
+        Tx #120: 0xABCDEF123456789078 → Ξ0.0 ETH
+        Tx #121: 0xABCDEF123456789079 → Ξ0.1 ETH
+        Tx #122: 0xABCDEF12345678907A → Ξ0.2 ETH
+        Tx #123: 0xABCDEF12345678907B → Ξ0.3 ETH
+        Tx #124: 0xABCDEF12345678907C → Ξ0.4 ETH
+        Tx #125: 0xABCDEF12345678907D → Ξ0.5 ETH
+        Tx #126: 0xABCDEF12345678907E → Ξ0.6 ETH
+        Tx #127: 0xABCDEF12345678907F → Ξ0.7 ETH
+        Tx #128: 0xABCDEF123456789080 → Ξ0.8 ETH
+        Tx #129: 0xABCDEF123456789081 → Ξ0.9 ETH
+        Tx #130: 0xABCDEF123456789082 → Ξ0.0 ETH
+        Tx #131: 0xABCDEF123456789083 → Ξ0.1 ETH
+        Tx #132: 0xABCDEF123456789084 → Ξ0.2 ETH
+        Tx #133: 0xABCDEF123456789085 → Ξ0.3 ETH
+        Tx #134: 0xABCDEF123456789086 → Ξ0.4 ETH
+        Tx #135: 0xABCDEF123456789087 → Ξ0.5 ETH
+        Tx #136: 0xABCDEF123456789088 → Ξ0.6 ETH
+        Tx #137: 0xABCDEF123456789089 → Ξ0.7 ETH
+        Tx #138: 0xABCDEF12345678908A → Ξ0.8 ETH
+        Tx #139: 0xABCDEF12345678908B → Ξ0.9 ETH
+        Tx #140: 0xABCDEF12345678908C → Ξ0.0 ETH
+        Tx #141: 0xABCDEF12345678908D → Ξ0.1 ETH
+        Tx #142: 0xABCDEF12345678908E → Ξ0.2 ETH
+        Tx #143: 0xABCDEF12345678908F → Ξ0.3 ETH
+        Tx #144: 0xABCDEF123456789090 → Ξ0.4 ETH
+        Tx #145: 0xABCDEF123456789091 → Ξ0.5 ETH
+        Tx #146: 0xABCDEF123456789092 → Ξ0.6 ETH
+        Tx #147: 0xABCDEF123456789093 → Ξ0.7 ETH
+        Tx #148: 0xABCDEF123456789094 → Ξ0.8 ETH
+        Tx #149: 0xABCDEF123456789095 → Ξ0.9 ETH
+        Tx #150: 0xABCDEF123456789096 → Ξ0.0 ETH
+        Tx #151: 0xABCDEF123456789097 → Ξ0.1 ETH
+        Tx #152: 0xABCDEF123456789098 → Ξ0.2 ETH
+        Tx #153: 0xABCDEF123456789099 → Ξ0.3 ETH
+        Tx #154: 0xABCDEF12345678909A → Ξ0.4 ETH
+        Tx #155: 0xABCDEF12345678909B → Ξ0.5 ETH
+        Tx #156: 0xABCDEF12345678909C → Ξ0.6 ETH
+        Tx #157: 0xABCDEF12345678909D → Ξ0.7 ETH
+        Tx #158: 0xABCDEF12345678909E → Ξ0.8 ETH
+        Tx #159: 0xABCDEF12345678909F → Ξ0.9 ETH
+        Tx #160: 0xABCDEF1234567890A0 → Ξ0.0 ETH
+        Tx #161: 0xABCDEF1234567890A1 → Ξ0.1 ETH
+        Tx #162: 0xABCDEF1234567890A2 → Ξ0.2 ETH
+        Tx #163: 0xABCDEF1234567890A3 → Ξ0.3 ETH
+        Tx #164: 0xABCDEF1234567890A4 → Ξ0.4 ETH
+        Tx #165: 0xABCDEF1234567890A5 → Ξ0.5 ETH
+        Tx #166: 0xABCDEF1234567890A6 → Ξ0.6 ETH
+        Tx #167: 0xABCDEF1234567890A7 → Ξ0.7 ETH
+        Tx #168: 0xABCDEF1234567890A8 → Ξ0.8 ETH
+        Tx #169: 0xABCDEF1234567890A9 → Ξ0.9 ETH
+        Tx #170: 0xABCDEF1234567890AA → Ξ0.0 ETH
+        Tx #171: 0xABCDEF1234567890AB → Ξ0.1 ETH
+        Tx #172: 0xABCDEF1234567890AC → Ξ0.2 ETH
+        Tx #173: 0xABCDEF1234567890AD → Ξ0.3 ETH
+        Tx #174: 0xABCDEF1234567890AE → Ξ0.4 ETH
+        Tx #175: 0xABCDEF1234567890AF → Ξ0.5 ETH
+        Tx #176: 0xABCDEF1234567890B0 → Ξ0.6 ETH
+        Tx #177: 0xABCDEF1234567890B1 → Ξ0.7 ETH
+        Tx #178: 0xABCDEF1234567890B2 → Ξ0.8 ETH
+        Tx #179: 0xABCDEF1234567890B3 → Ξ0.9 ETH
+        Tx #180: 0xABCDEF1234567890B4 → Ξ0.0 ETH
+        Tx #181: 0xABCDEF1234567890B5 → Ξ0.1 ETH
+        Tx #182: 0xABCDEF1234567890B6 → Ξ0.2 ETH
+        Tx #183: 0xABCDEF1234567890B7 → Ξ0.3 ETH
+        Tx #184: 0xABCDEF1234567890B8 → Ξ0.4 ETH
+        Tx #185: 0xABCDEF1234567890B9 → Ξ0.5 ETH
+        Tx #186: 0xABCDEF1234567890BA → Ξ0.6 ETH
+        Tx #187: 0xABCDEF1234567890BB → Ξ0.7 ETH
+        Tx #188: 0xABCDEF1234567890BC → Ξ0.8 ETH
+        Tx #189: 0xABCDEF1234567890BD → Ξ0.9 ETH
+        Tx #190: 0xABCDEF1234567890BE → Ξ0.0 ETH
+        Tx #191: 0xABCDEF1234567890BF → Ξ0.1 ETH
+        Tx #192: 0xABCDEF1234567890C0 → Ξ0.2 ETH
+        Tx #193: 0xABCDEF1234567890C1 → Ξ0.3 ETH
+        Tx #194: 0xABCDEF1234567890C2 → Ξ0.4 ETH
+        Tx #195: 0xABCDEF1234567890C3 → Ξ0.5 ETH
+        Tx #196: 0xABCDEF1234567890C4 → Ξ0.6 ETH
+        Tx #197: 0xABCDEF1234567890C5 → Ξ0.7 ETH
+        Tx #198: 0xABCDEF1234567890C6 → Ξ0.8 ETH
+        Tx #199: 0xABCDEF1234567890C7 → Ξ0.9 ETH
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="title">Powered by Avoda</div>
+      <p>© 2025 Avoda Wallet. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
