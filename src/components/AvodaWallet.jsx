@@ -1,3 +1,7 @@
+import AvodaWallet from "@/components/AvodaWallet";  // Next.js alias style
+
+// or if that alias doesn't work:
+import AvodaWallet from "../components/AvodaWallet"; // Adjust relative path if needed
 // src/components/AvodaWallet.jsx
 import { useState } from "react";
 import { ethers } from "ethers";
