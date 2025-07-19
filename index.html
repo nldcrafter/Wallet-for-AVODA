@@ -267,7 +267,7 @@
     <button class="navLink" id="btnLogout">⬅ Logout</button>
 
     <label for="selectNetwork" style="font-weight:700;">Select Network</label>
-    <select id="selectNetwork" aria-describedby="networkDesc">
+    <select id="selectNetwork" aria-describedby="networkDesc" aria-label="Network select">
       <option value="https://mainnet.infura.io/v3/your_infura_id">Ethereum Mainnet</option>
       <option value="https://sepolia.infura.io/v3/your_infura_id">Sepolia Testnet</option>
       <option value="https://polygon-rpc.com">Polygon</option>
@@ -335,6 +335,7 @@
   const inputAmount = document.getElementById('inputAmount');
   const txHistoryList = document.getElementById('txHistory');
   const inputPrivateKey = document.getElementById('inputPrivateKey');
+  const btnSendTx = document.getElementById('btnSendTx');
 
   // State variables
   let wallet = null;
@@ -371,8 +372,7 @@
 
   // Encryption helpers
   async function encryptPrivateKey(pk, pin) {
-    const enc = window.crypto.subtle;
-    const encKey = await crypto.subtle.importKey(
+    const encKeyMaterial = await crypto.subtle.importKey(
       "raw",
       new TextEncoder().encode(pin),
       { name: "PBKDF2" },
@@ -381,7 +381,7 @@
     );
     const key = await crypto.subtle.deriveKey(
       { name: "PBKDF2", salt: new TextEncoder().encode("avoda_salt"), iterations: 100000, hash: "SHA-256" },
-      encKey,
+      encKeyMaterial,
       { name: "AES-GCM", length: 256 },
       true,
       ["encrypt", "decrypt"]
@@ -399,11 +399,10 @@
 
   async function decryptPrivateKey(encrypted, pin) {
     try {
-      const enc = window.crypto.subtle;
       const [ivB64, dataB64] = encrypted.split(":");
       const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
       const data = Uint8Array.from(atob(dataB64), c => c.charCodeAt(0));
-      const encKey = await crypto.subtle.importKey(
+      const encKeyMaterial = await crypto.subtle.importKey(
         "raw",
         new TextEncoder().encode(pin),
         { name: "PBKDF2" },
@@ -412,7 +411,7 @@
       );
       const key = await crypto.subtle.deriveKey(
         { name: "PBKDF2", salt: new TextEncoder().encode("avoda_salt"), iterations: 100000, hash: "SHA-256" },
-        encKey,
+        encKeyMaterial,
         { name: "AES-GCM", length: 256 },
         true,
         ["encrypt", "decrypt"]
@@ -420,230 +419,209 @@
       const decrypted = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv },
         key,
-        data const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv },
-        key,
         data
       );
-      return new TextDecoder().decode(decrypted);
+      return new TextDecoder().decode(dereturn new TextDecoder().decode(decrypted);
     } catch (e) {
-      return null; // Decryption failed (wrong PIN or corrupted)
+      return null; // Decryption failed (wrong PIN or corrupted data)
     }
   }
 
-  // Save encrypted private key in localStorage
+  // Save encrypted wallet to localStorage
   async function saveWallet(pk, pin) {
     const encrypted = await encryptPrivateKey(pk, pin);
     localStorage.setItem(STORAGE_WALLET, encrypted);
-  }
-
-  // Load and decrypt private key from localStorage
-  async function loadWallet(pin) {
-    const encrypted = localStorage.getItem(STORAGE_WALLET);
-    if (!encrypted) return null;
-    return await decryptPrivateKey(encrypted, pin);
-  }
-
-  // Save PIN separately (hashed ideally, but plain for demo)
-  function savePin(pin) {
     localStorage.setItem(STORAGE_PIN, pin);
   }
 
-  function getPin() {
-    return localStorage.getItem(STORAGE_PIN);
+  // Load and decrypt wallet from localStorage
+  async function loadWallet(pin) {
+    const encrypted = localStorage.getItem(STORAGE_WALLET);
+    if (!encrypted) return null;
+    const pk = await decryptPrivateKey(encrypted, pin);
+    if (!pk) return null;
+    try {
+      return new ethers.Wallet(pk);
+    } catch {
+      return null;
+    }
   }
 
-  // Generate and show wallet info on dashboard
-  function displayWalletInfo() {
+  // Show wallet info (address, balance, QR code)
+  async function updateWalletInfo() {
+    if (!wallet) return;
     walletAddress.textContent = "Address: " + wallet.address;
-    generateQRCode(wallet.address);
-    updateFakeBalance();
-    renderTxHistory();
-  }
-
-  // Generate QR code
-  function generateQRCode(text) {
     qrcodeContainer.innerHTML = "";
     new QRCode(qrcodeContainer, {
-      text,
+      text: wallet.address,
       width: 160,
       height: 160,
       colorDark: "#00ff7f",
       colorLight: "#002211",
       correctLevel: QRCode.CorrectLevel.H
     });
+
+    provider = new ethers.JsonRpcProvider(networkURL);
+    try {
+      const balance = await provider.getBalance(wallet.address);
+      const ethBalance = ethers.formatEther(balance);
+      walletBalance.textContent = `Balance: ${parseFloat(ethBalance).toFixed(4)} ETH`;
+    } catch {
+      walletBalance.textContent = "Balance: --";
+    }
   }
 
-  // Fake balance for demo (random between 0 and 10)
-  function updateFakeBalance() {
-    const fakeBalance = (Math.random() * 10).toFixed(5);
-    walletBalance.textContent = `Balance: ${fakeBalance} ETH (fake)`;
+  // Add a transaction to history UI
+  function addTxToHistory(tx) {
+    txHistory.unshift(tx);
+    if (txHistory.length > 10) txHistory.pop();
+    renderTxHistory();
   }
 
-  // Render transaction history
+  // Render transaction history list
   function renderTxHistory() {
     txHistoryList.innerHTML = "";
-    if (txHistory.length === 0) {
-      txHistoryList.innerHTML = "<li>No transactions yet</li>";
-      return;
-    }
-    txHistory.slice().reverse().forEach(tx => {
-      const li = document.createElement("li");
-      li.textContent = tx;
+    for (const tx of txHistory) {
+      const li = document.createElement('li');
+      li.textContent = `${tx.date} - To: ${tx.to}, Amount: ${tx.amount} ETH, Status: ${tx.status}`;
       txHistoryList.appendChild(li);
-    });
+    }
   }
 
-  // Switch network
-  function switchNetwork(url) {
-    networkURL = url;
-    // Here you can update provider if connecting to real network later
-    updateFakeBalance();
-  }
+  // Event Handlers
 
-  // Clear PIN inputs
-  function clearPinInputs() {
-    pinInputs.forEach(i => i.value = "");
-    pinInputs[0].focus();
-  }
-
-  // Unlock wallet using PIN
-  btnUnlock.addEventListener("click", async () => {
-    const pin = pinInputs.map(i => i.value).join("");
+  // Unlock wallet with PIN
+  btnUnlock.addEventListener('click', async () => {
+    const pin = pinInputs.map(i => i.value).join('');
     if (pin.length !== 4) {
-      alert("Enter 4-digit PIN");
+      alert("Please enter a 4-digit PIN");
       return;
     }
-    const savedPin = getPin();
-
-    if (!savedPin) {
-      // First time: save pin but no wallet yet
-      savePin(pin);
-      alert("PIN saved! Now create or import your wallet.");
-      clearPinInputs();
-    } else if (pin === savedPin) {
-      // Try to load wallet
-      const pk = await loadWallet(pin);
-      if (!pk) {
-        alert("No wallet found for this PIN. Create or import your wallet.");
-        clearPinInputs();
-        return;
-      }
-      wallet = new ethers.Wallet(pk);
-      displayWalletInfo();
-      showScreen("wallet");
+    const loadedWallet = await loadWallet(pin);
+    if (loadedWallet) {
+      wallet = loadedWallet;
+      showScreen('wallet');
+      await updateWalletInfo();
+      txHistory = [];
+      renderTxHistory();
+      pinInputs.forEach(i => i.value = "");
     } else {
-      alert("Wrong PIN!");
-      clearPinInputs();
+      alert("Invalid PIN or no wallet found. Please create or import a wallet.");
     }
   });
 
-  // Go to Create Wallet screen
-  btnGoCreate.addEventListener("click", () => {
-    showScreen("create");
+  // Navigate to Create Wallet screen
+  btnGoCreate.addEventListener('click', () => {
+    showScreen('create');
   });
 
-  // Go to Import Wallet screen
-  btnGoImport.addEventListener("click", () => {
-    showScreen("import");
+  // Navigate to Import Wallet screen
+  btnGoImport.addEventListener('click', () => {
+    showScreen('import');
   });
 
-  // Back from Create to PIN
-  btnBackFromCreate.addEventListener("click", () => {
-    showScreen("pin");
-    clearPinInputs();
+  // Back from Create Wallet
+  btnBackFromCreate.addEventListener('click', () => {
+    showScreen('pin');
   });
 
-  // Back from Import to PIN
-  btnBackFromImport.addEventListener("click", () => {
-    showScreen("pin");
-    clearPinInputs();
-    inputPrivateKey.value = "";
+  // Back from Import Wallet
+  btnBackFromImport.addEventListener('click', () => {
+    showScreen('pin');
   });
 
   // Create new wallet and save encrypted
-  btnCreateWallet.addEventListener("click", async () => {
-    const pin = getPin();
-    if (!pin) {
-      alert("Set your PIN first on unlock screen.");
+  btnCreateWallet.addEventListener('click', async () => {
+    const pin = prompt("Enter a new 4-digit PIN to secure your wallet:");
+    if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+      alert("Invalid PIN. Please enter exactly 4 digits.");
       return;
     }
     wallet = ethers.Wallet.createRandom();
     await saveWallet(wallet.privateKey, pin);
-    alert(`Wallet created!\nAddress:\n${wallet.address}\n\nSave your private key safely!`);
-    displayWalletInfo();
-    showScreen("wallet");
+    alert("New wallet created and secured with your PIN!\n\nAddress:\n" + wallet.address);
+    showScreen('pin');
   });
 
-  // Import wallet by private key
-  btnImportWallet.addEventListener("click", async () => {
-    const pin = getPin();
-    if (!pin) {
-      alert("Set your PIN first on unlock screen.");
-      return;
-    }
-    let pk = inputPrivateKey.value.trim();
-    if (!pk.startsWith("0x") || pk.length !== 66) {
-      alert("Private key must start with 0x and be 64 hex characters long.");
+  // Import wallet with private key
+  btnImportWallet.addEventListener('click', async () => {
+    const pk = inputPrivateKey.value.trim();
+    if (!pk) {
+      alert("Please enter a private key");
       return;
     }
     try {
       wallet = new ethers.Wallet(pk);
-      await saveWallet(pk, pin);
-      alert(`Wallet imported!\nAddress:\n${wallet.address}`);
-      displayWalletInfo();
-      showScreen("wallet");
-      inputPrivateKey.value = "";
-    } catch (e) {
-      alert("Invalid private key.");
+    } catch {
+      alert("Invalid private key");
+      return;
+    }
+    const pin = prompt("Enter a 4-digit PIN to secure your imported wallet:");
+    if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+      alert("Invalid PIN. Please enter exactly 4 digits.");
+      wallet = null;
+      return;
+    }
+    await saveWallet(wallet.privateKey, pin);
+    alert("Wallet imported and secured with your PIN!\n\nAddress:\n" + wallet.address);
+    inputPrivateKey.value = "";
+    showScreen('pin');
+  });
+
+  // Logout to PIN screen
+  btnLogout.addEventListener('click', () => {
+    wallet = null;
+    provider = null;
+    txHistory = [];
+    renderTxHistory();
+    showScreen('pin');
+  });
+
+  // Network change event
+  selectNetwork.addEventListener('change', async () => {
+    networkURL = selectNetwork.value;
+    if (wallet) {
+      await updateWalletInfo();
     }
   });
 
-  // Logout: clear wallet and go to PIN screen
-  btnLogout.addEventListener("click", () => {
-    wallet = null;
-    txHistory = [];
-    walletAddress.textContent = "Address: --";
-    walletBalance.textContent = "Balance: -- ETH";
-    qrcodeContainer.innerHTML = "";
-    showScreen("pin");
-    clearPinInputs();
-  });
-
-  // Change network
-  selectNetwork.addEventListener("change", (e) => {
-    switchNetwork(e.target.value);
-  });
-
-  // Send transaction (fake only, just adds to history)
-  sendForm.addEventListener("submit", (e) => {
+  // Send transaction (simulated)
+  sendForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!wallet) {
-      alert("Unlock wallet first.");
+      alert("No wallet loaded.");
       return;
     }
     const to = inputToAddress.value.trim();
-    const amount = parseFloat(inputAmount.value.trim());
-    if (!ethers.utils.isAddress(to)) {
-      alert("Invalid recipient address.");
+    const amount = parseFloat(inputAmount.value);
+    if (!to || !ethers.isAddress(to)) {
+      alert("Invalid recipient address");
       return;
     }
     if (isNaN(amount) || amount <= 0) {
-      alert("Enter a valid amount.");
+      alert("Enter a valid amount > 0");
       return;
     }
-    // Fake send tx (just add to history)
-    const txMsg = `Sent ${amount.toFixed(5)} ETH to ${to}`;
-    txHistory.push(txMsg);
-    renderTxHistory();
+    btnSendTx.disabled = true;
+
+    // Simulate sending transaction for demo (no real tx)
+    // You can implement real send transaction logic here with wallet.connect(provider).sendTransaction()
+
+    const fakeTx = {
+      to,
+      amount: amount.toFixed(4),
+      date: new Date().toLocaleString(),
+      status: "Success (simulated)"
+    };
+    addTxToHistory(fakeTx);
+    alert(`Transaction simulated:\nSent ${fakeTx.amount} ETH to ${fakeTx.to}`);
+
     clearSendForm();
-    alert("Transaction simulated (fake).");
+    btnSendTx.disabled = false;
   });
 
-  // Init app
-  showScreen("pin");
-  clearPinInputs();
-  switchNetwork(selectNetwork.value);
+  // On load, show PIN screen
+  showScreen('pin');
 
 })();
 </script>
