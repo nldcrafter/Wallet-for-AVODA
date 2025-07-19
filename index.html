@@ -1,342 +1,652 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Avoda Wallet</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f3f4f6;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background-color: #111827;
-      color: #fff;
-      padding: 20px;
-      text-align: center;
-    }
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .section {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .title {
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 10px;
-      color: #111827;
-    }
-    .input, .button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-    }
-    .button {
-      background-color: #2563eb;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    .button:hover {
-      background-color: #1d4ed8;
-    }
-    .network {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .network button {
-      flex: 1;
-      min-width: 100px;
-    }
-    .qr {
-      margin: 20px 0;
-      text-align: center;
-    }
-    .balance {
-      font-size: 32px;
-      font-weight: bold;
-      color: #10b981;
-    }
-    .tx {
-      font-family: monospace;
-      background: #f9fafb;
-      padding: 10px;
-      border-radius: 8px;
-      overflow-x: auto;
-      max-height: 300px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Avoda Wallet 🌿</title>
+
+<!-- Ethers.js for wallet and Ethereum interaction -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.6.0/dist/ethers.min.js"></script>
+<!-- QRCode.js for QR code generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+  /* Reset & base */
+  *, *::before, *::after {box-sizing: border-box;}
+  body, html {
+    margin: 0; padding: 0; height: 100%; background: #0b1a26;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #c1dede;
+    display: flex; justify-content: center; align-items: center;
+  }
+
+  /* Container */
+  #app {
+    background: linear-gradient(135deg, #051620 0%, #003b31 100%);
+    border-radius: 20px;
+    width: 400px;
+    max-width: 95vw;
+    padding: 30px 25px;
+    box-shadow: 0 0 30px #00ff7faa;
+    display: flex; flex-direction: column;
+    user-select: none;
+  }
+
+  h1 {
+    margin: 0 0 25px 0;
+    font-weight: 900;
+    font-size: 2rem;
+    color: #00ff7f;
+    text-align: center;
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px #00ff7f66;
+  }
+
+  /* Screens */
+  .screen {
+    display: none;
+    animation: fadeInUp 0.5s ease forwards;
+  }
+  .screen.active {
+    display: block;
+  }
+  @keyframes fadeInUp {
+    0% {opacity: 0; transform: translateY(20px);}
+    100% {opacity: 1; transform: translateY(0);}
+  }
+
+  /* Buttons */
+  button {
+    background: #00ff7f;
+    border: none;
+    color: #00331a;
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding: 12px 20px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    width: 100%;
+    margin-top: 15px;
+    box-shadow: 0 0 10px #00ff7faa;
+  }
+  button:hover {
+    background: #00cc66;
+    box-shadow: 0 0 20px #00ff7fff;
+  }
+  button:disabled {
+    background: #006633;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  /* Inputs */
+  input[type="text"], input[type="password"], input[type="number"], select {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 14px;
+    border: none;
+    background: #042822;
+    color: #00ff7f;
+    font-size: 1rem;
+    outline: none;
+    box-shadow: inset 0 0 8px #00ff7f44;
+    transition: box-shadow 0.3s ease;
+  }
+  input::placeholder {
+    color: #00804d99;
+  }
+  input:focus {
+    box-shadow: 0 0 15px #00ff7fff;
+  }
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3csvg fill='none' stroke='%2300ff7f' stroke-width='2' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3e%3c/path%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 20px 20px;
+  }
+
+  /* PIN inputs */
+  #pinInputs {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 15px;
+  }
+  #pinInputs input {
+    width: 50px;
+    font-size: 2.5rem;
+    font-weight: 900;
+    background: #004d33;
+    border-radius: 10px;
+    text-align: center;
+    color: #00ff7f;
+    box-shadow: 0 0 12px #00ff7f99 inset;
+    border: none;
+  }
+  #pinInputs input:focus {
+    box-shadow: 0 0 25px #00ff7fff inset;
+  }
+
+  /* Wallet info */
+  #walletAddress, #walletBalance {
+    background: #004d33cc;
+    padding: 15px 12px;
+    border-radius: 16px;
+    font-weight: 600;
+    text-align: center;
+    margin-top: 15px;
+    font-size: 0.95rem;
+    word-break: break-all;
+    user-select: text;
+    box-shadow: 0 0 10px #00ff7f88;
+  }
+  #walletBalance {
+    font-size: 1.25rem;
+    color: #00ff7f;
+  }
+
+  /* QR code container */
+  #qrcode {
+    margin: 25px auto 15px auto;
+    width: 160px;
+    height: 160px;
+    background: #002211;
+    border-radius: 20px;
+    box-shadow: 0 0 25px #00ff7f99 inset;
+  }
+
+  /* Send transaction inputs */
+  #sendForm label {
+    display: block;
+    font-weight: 600;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+  }
+  #sendForm input {
+    font-size: 1rem;
+  }
+
+  /* Transaction history */
+  #txHistory {
+    margin-top: 20px;
+    max-height: 160px;
+    overflow-y: auto;
+    background: #002f1a;
+    border-radius: 14px;
+    padding: 12px 15px;
+    box-shadow: inset 0 0 15px #00ff7f99;
+  }
+  #txHistory li {
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    color: #90ee90;
+    word-break: break-word;
+  }
+
+  /* Nav link */
+  .navLink {
+    margin-top: 20px;
+    text-align: center;
+    color: #00ff7fcc;
+    cursor: pointer;
+    font-weight: 700;
+    text-decoration: underline;
+    user-select: none;
+  }
+  .navLink:hover {
+    color: #00cc66;
+  }
+
+  /* Small loader */
+  .loader {
+    border: 4px solid #004d3322;
+    border-top: 4px solid #00ff7f;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto 0;
+  }
+  @keyframes spin {
+    0% {transform: rotate(0deg);}
+    100% {transform: rotate(360deg);}
+  }
+</style>
+
 </head>
 <body>
-  <header>
-    <h1>🔐 Avoda Wallet</h1>
-    <p>Secure. Fast. Smart.</p>
-  </header>
 
-  <div class="container">
-    <div class="section">
-      <div class="title">Enter PIN to Unlock</div>
-      <input class="input" type="password" placeholder="Enter your PIN" />
-      <button class="button">Unlock</button>
-    </div>
+<div id="app">
 
-    <div class="section">
-      <div class="title">Create / Import Wallet</div>
-      <input class="input" placeholder="Enter mnemonic or new password" />
-      <button class="button">Create Wallet</button>
-      <button class="button">Import Wallet</button>
-    </div>
+  <h1>AVODA WALLET 🌿</h1>
 
-    <div class="section">
-      <div class="title">Select Network</div>
-      <div class="network">
-        <button class="button">Ethereum</button>
-        <button class="button">BSC</button>
-        <button class="button">Polygon</button>
-        <button class="button">AVAX</button>
-      </div>
+  <!-- PIN Screen -->
+  <section id="screenPin" class="screen active" aria-label="PIN Screen">
+    <p style="text-align:center; font-weight:600;">Enter your 4-digit PIN</p>
+    <div id="pinInputs" role="group" aria-label="PIN input">
+      <input type="password" inputmode="numeric" maxlength="1" id="pin0" aria-label="PIN digit 1" autocomplete="off" />
+      <input type="password" inputmode="numeric" maxlength="1" id="pin1" aria-label="PIN digit 2" autocomplete="off" />
+      <input type="password" inputmode="numeric" maxlength="1" id="pin2" aria-label="PIN digit 3" autocomplete="off" />
+      <input type="password" inputmode="numeric" maxlength="1" id="pin3" aria-label="PIN digit 4" autocomplete="off" />
     </div>
+    <button id="btnUnlock" aria-describedby="pinHelp">Unlock</button>
+    <p id="pinHelp" style="margin-top:10px; font-size:0.85rem; color:#006633; text-align:center;">
+      New user? Create or import wallet below
+    </p>
+    <div style="display:flex; gap:15px; margin-top:12px;">
+      <button id="btnGoCreate" style="flex:1;">Create Wallet</button>
+      <button id="btnGoImport" style="flex:1;">Import Wallet</button>
+    </div>
+  </section>
 
-    <div class="section">
-      <div class="title">Wallet Balance</div>
-      <div class="balance">Ξ 8.45 ETH</div>
-    </div>
+  <!-- Create Wallet Screen -->
+  <section id="screenCreate" class="screen" aria-label="Create Wallet Screen">
+    <button class="navLink" id="btnBackFromCreate" aria-label="Back to PIN Screen">⬅ Back</button>
+    <button id="btnCreateWallet" aria-live="polite" aria-busy="false">🆕 Generate New Wallet</button>
+    <p style="margin-top:12px; font-size:0.9rem; color:#009955;">
+      Your private key will be stored locally and encrypted with your PIN.
+      Keep your PIN and private key safe!
+    </p>
+  </section>
 
-    <div class="section">
-      <div class="title">Send / Receive</div>
-      <input class="input" placeholder="Recipient address" />
-      <input class="input" placeholder="Amount" />
-      <button class="button">Send</button>
-      <button class="button">Receive</button>
-    </div>
+  <!-- Import Wallet Screen -->
+  <section id="screenImport" class="screen" aria-label="Import Wallet Screen">
+    <button class="navLink" id="btnBackFromImport" aria-label="Back to PIN Screen">⬅ Back</button>
+    <label for="inputPrivateKey" style="font-weight:700; margin-top:15px;">Enter Private Key</label>
+    <input type="text" id="inputPrivateKey" placeholder="0x..." autocomplete="off" spellcheck="false" aria-required="true" />
+    <button id="btnImportWallet">📥 Import Wallet</button>
+  </section>
 
-    <div class="section qr">
-      <div class="title">QR Code</div>
-      <img src="https://api.qrserver.com/v1/create-qr-code/?data=0xYourAddressHere&size=150x150" alt="QR Code" />
-    </div>
+  <!-- Wallet Dashboard Screen -->
+  <section id="screenWallet" class="screen" aria-label="Wallet Dashboard Screen">
+    <button class="navLink" id="btnLogout">⬅ Logout</button>
 
-    <div class="section">
-      <div class="title">Transaction History</div>
-      <div class="tx">
-        Tx #0: 0xABCDEF123456789000 → Ξ0.0 ETH
-        Tx #1: 0xABCDEF123456789001 → Ξ0.1 ETH
-        Tx #2: 0xABCDEF123456789002 → Ξ0.2 ETH
-        Tx #3: 0xABCDEF123456789003 → Ξ0.3 ETH
-        Tx #4: 0xABCDEF123456789004 → Ξ0.4 ETH
-        Tx #5: 0xABCDEF123456789005 → Ξ0.5 ETH
-        Tx #6: 0xABCDEF123456789006 → Ξ0.6 ETH
-        Tx #7: 0xABCDEF123456789007 → Ξ0.7 ETH
-        Tx #8: 0xABCDEF123456789008 → Ξ0.8 ETH
-        Tx #9: 0xABCDEF123456789009 → Ξ0.9 ETH
-        Tx #10: 0xABCDEF12345678900A → Ξ0.0 ETH
-        Tx #11: 0xABCDEF12345678900B → Ξ0.1 ETH
-        Tx #12: 0xABCDEF12345678900C → Ξ0.2 ETH
-        Tx #13: 0xABCDEF12345678900D → Ξ0.3 ETH
-        Tx #14: 0xABCDEF12345678900E → Ξ0.4 ETH
-        Tx #15: 0xABCDEF12345678900F → Ξ0.5 ETH
-        Tx #16: 0xABCDEF123456789010 → Ξ0.6 ETH
-        Tx #17: 0xABCDEF123456789011 → Ξ0.7 ETH
-        Tx #18: 0xABCDEF123456789012 → Ξ0.8 ETH
-        Tx #19: 0xABCDEF123456789013 → Ξ0.9 ETH
-        Tx #20: 0xABCDEF123456789014 → Ξ0.0 ETH
-        Tx #21: 0xABCDEF123456789015 → Ξ0.1 ETH
-        Tx #22: 0xABCDEF123456789016 → Ξ0.2 ETH
-        Tx #23: 0xABCDEF123456789017 → Ξ0.3 ETH
-        Tx #24: 0xABCDEF123456789018 → Ξ0.4 ETH
-        Tx #25: 0xABCDEF123456789019 → Ξ0.5 ETH
-        Tx #26: 0xABCDEF12345678901A → Ξ0.6 ETH
-        Tx #27: 0xABCDEF12345678901B → Ξ0.7 ETH
-        Tx #28: 0xABCDEF12345678901C → Ξ0.8 ETH
-        Tx #29: 0xABCDEF12345678901D → Ξ0.9 ETH
-        Tx #30: 0xABCDEF12345678901E → Ξ0.0 ETH
-        Tx #31: 0xABCDEF12345678901F → Ξ0.1 ETH
-        Tx #32: 0xABCDEF123456789020 → Ξ0.2 ETH
-        Tx #33: 0xABCDEF123456789021 → Ξ0.3 ETH
-        Tx #34: 0xABCDEF123456789022 → Ξ0.4 ETH
-        Tx #35: 0xABCDEF123456789023 → Ξ0.5 ETH
-        Tx #36: 0xABCDEF123456789024 → Ξ0.6 ETH
-        Tx #37: 0xABCDEF123456789025 → Ξ0.7 ETH
-        Tx #38: 0xABCDEF123456789026 → Ξ0.8 ETH
-        Tx #39: 0xABCDEF123456789027 → Ξ0.9 ETH
-        Tx #40: 0xABCDEF123456789028 → Ξ0.0 ETH
-        Tx #41: 0xABCDEF123456789029 → Ξ0.1 ETH
-        Tx #42: 0xABCDEF12345678902A → Ξ0.2 ETH
-        Tx #43: 0xABCDEF12345678902B → Ξ0.3 ETH
-        Tx #44: 0xABCDEF12345678902C → Ξ0.4 ETH
-        Tx #45: 0xABCDEF12345678902D → Ξ0.5 ETH
-        Tx #46: 0xABCDEF12345678902E → Ξ0.6 ETH
-        Tx #47: 0xABCDEF12345678902F → Ξ0.7 ETH
-        Tx #48: 0xABCDEF123456789030 → Ξ0.8 ETH
-        Tx #49: 0xABCDEF123456789031 → Ξ0.9 ETH
-        Tx #50: 0xABCDEF123456789032 → Ξ0.0 ETH
-        Tx #51: 0xABCDEF123456789033 → Ξ0.1 ETH
-        Tx #52: 0xABCDEF123456789034 → Ξ0.2 ETH
-        Tx #53: 0xABCDEF123456789035 → Ξ0.3 ETH
-        Tx #54: 0xABCDEF123456789036 → Ξ0.4 ETH
-        Tx #55: 0xABCDEF123456789037 → Ξ0.5 ETH
-        Tx #56: 0xABCDEF123456789038 → Ξ0.6 ETH
-        Tx #57: 0xABCDEF123456789039 → Ξ0.7 ETH
-        Tx #58: 0xABCDEF12345678903A → Ξ0.8 ETH
-        Tx #59: 0xABCDEF12345678903B → Ξ0.9 ETH
-        Tx #60: 0xABCDEF12345678903C → Ξ0.0 ETH
-        Tx #61: 0xABCDEF12345678903D → Ξ0.1 ETH
-        Tx #62: 0xABCDEF12345678903E → Ξ0.2 ETH
-        Tx #63: 0xABCDEF12345678903F → Ξ0.3 ETH
-        Tx #64: 0xABCDEF123456789040 → Ξ0.4 ETH
-        Tx #65: 0xABCDEF123456789041 → Ξ0.5 ETH
-        Tx #66: 0xABCDEF123456789042 → Ξ0.6 ETH
-        Tx #67: 0xABCDEF123456789043 → Ξ0.7 ETH
-        Tx #68: 0xABCDEF123456789044 → Ξ0.8 ETH
-        Tx #69: 0xABCDEF123456789045 → Ξ0.9 ETH
-        Tx #70: 0xABCDEF123456789046 → Ξ0.0 ETH
-        Tx #71: 0xABCDEF123456789047 → Ξ0.1 ETH
-        Tx #72: 0xABCDEF123456789048 → Ξ0.2 ETH
-        Tx #73: 0xABCDEF123456789049 → Ξ0.3 ETH
-        Tx #74: 0xABCDEF12345678904A → Ξ0.4 ETH
-        Tx #75: 0xABCDEF12345678904B → Ξ0.5 ETH
-        Tx #76: 0xABCDEF12345678904C → Ξ0.6 ETH
-        Tx #77: 0xABCDEF12345678904D → Ξ0.7 ETH
-        Tx #78: 0xABCDEF12345678904E → Ξ0.8 ETH
-        Tx #79: 0xABCDEF12345678904F → Ξ0.9 ETH
-        Tx #80: 0xABCDEF123456789050 → Ξ0.0 ETH
-        Tx #81: 0xABCDEF123456789051 → Ξ0.1 ETH
-        Tx #82: 0xABCDEF123456789052 → Ξ0.2 ETH
-        Tx #83: 0xABCDEF123456789053 → Ξ0.3 ETH
-        Tx #84: 0xABCDEF123456789054 → Ξ0.4 ETH
-        Tx #85: 0xABCDEF123456789055 → Ξ0.5 ETH
-        Tx #86: 0xABCDEF123456789056 → Ξ0.6 ETH
-        Tx #87: 0xABCDEF123456789057 → Ξ0.7 ETH
-        Tx #88: 0xABCDEF123456789058 → Ξ0.8 ETH
-        Tx #89: 0xABCDEF123456789059 → Ξ0.9 ETH
-        Tx #90: 0xABCDEF12345678905A → Ξ0.0 ETH
-        Tx #91: 0xABCDEF12345678905B → Ξ0.1 ETH
-        Tx #92: 0xABCDEF12345678905C → Ξ0.2 ETH
-        Tx #93: 0xABCDEF12345678905D → Ξ0.3 ETH
-        Tx #94: 0xABCDEF12345678905E → Ξ0.4 ETH
-        Tx #95: 0xABCDEF12345678905F → Ξ0.5 ETH
-        Tx #96: 0xABCDEF123456789060 → Ξ0.6 ETH
-        Tx #97: 0xABCDEF123456789061 → Ξ0.7 ETH
-        Tx #98: 0xABCDEF123456789062 → Ξ0.8 ETH
-        Tx #99: 0xABCDEF123456789063 → Ξ0.9 ETH
-        Tx #100: 0xABCDEF123456789064 → Ξ0.0 ETH
-        Tx #101: 0xABCDEF123456789065 → Ξ0.1 ETH
-        Tx #102: 0xABCDEF123456789066 → Ξ0.2 ETH
-        Tx #103: 0xABCDEF123456789067 → Ξ0.3 ETH
-        Tx #104: 0xABCDEF123456789068 → Ξ0.4 ETH
-        Tx #105: 0xABCDEF123456789069 → Ξ0.5 ETH
-        Tx #106: 0xABCDEF12345678906A → Ξ0.6 ETH
-        Tx #107: 0xABCDEF12345678906B → Ξ0.7 ETH
-        Tx #108: 0xABCDEF12345678906C → Ξ0.8 ETH
-        Tx #109: 0xABCDEF12345678906D → Ξ0.9 ETH
-        Tx #110: 0xABCDEF12345678906E → Ξ0.0 ETH
-        Tx #111: 0xABCDEF12345678906F → Ξ0.1 ETH
-        Tx #112: 0xABCDEF123456789070 → Ξ0.2 ETH
-        Tx #113: 0xABCDEF123456789071 → Ξ0.3 ETH
-        Tx #114: 0xABCDEF123456789072 → Ξ0.4 ETH
-        Tx #115: 0xABCDEF123456789073 → Ξ0.5 ETH
-        Tx #116: 0xABCDEF123456789074 → Ξ0.6 ETH
-        Tx #117: 0xABCDEF123456789075 → Ξ0.7 ETH
-        Tx #118: 0xABCDEF123456789076 → Ξ0.8 ETH
-        Tx #119: 0xABCDEF123456789077 → Ξ0.9 ETH
-        Tx #120: 0xABCDEF123456789078 → Ξ0.0 ETH
-        Tx #121: 0xABCDEF123456789079 → Ξ0.1 ETH
-        Tx #122: 0xABCDEF12345678907A → Ξ0.2 ETH
-        Tx #123: 0xABCDEF12345678907B → Ξ0.3 ETH
-        Tx #124: 0xABCDEF12345678907C → Ξ0.4 ETH
-        Tx #125: 0xABCDEF12345678907D → Ξ0.5 ETH
-        Tx #126: 0xABCDEF12345678907E → Ξ0.6 ETH
-        Tx #127: 0xABCDEF12345678907F → Ξ0.7 ETH
-        Tx #128: 0xABCDEF123456789080 → Ξ0.8 ETH
-        Tx #129: 0xABCDEF123456789081 → Ξ0.9 ETH
-        Tx #130: 0xABCDEF123456789082 → Ξ0.0 ETH
-        Tx #131: 0xABCDEF123456789083 → Ξ0.1 ETH
-        Tx #132: 0xABCDEF123456789084 → Ξ0.2 ETH
-        Tx #133: 0xABCDEF123456789085 → Ξ0.3 ETH
-        Tx #134: 0xABCDEF123456789086 → Ξ0.4 ETH
-        Tx #135: 0xABCDEF123456789087 → Ξ0.5 ETH
-        Tx #136: 0xABCDEF123456789088 → Ξ0.6 ETH
-        Tx #137: 0xABCDEF123456789089 → Ξ0.7 ETH
-        Tx #138: 0xABCDEF12345678908A → Ξ0.8 ETH
-        Tx #139: 0xABCDEF12345678908B → Ξ0.9 ETH
-        Tx #140: 0xABCDEF12345678908C → Ξ0.0 ETH
-        Tx #141: 0xABCDEF12345678908D → Ξ0.1 ETH
-        Tx #142: 0xABCDEF12345678908E → Ξ0.2 ETH
-        Tx #143: 0xABCDEF12345678908F → Ξ0.3 ETH
-        Tx #144: 0xABCDEF123456789090 → Ξ0.4 ETH
-        Tx #145: 0xABCDEF123456789091 → Ξ0.5 ETH
-        Tx #146: 0xABCDEF123456789092 → Ξ0.6 ETH
-        Tx #147: 0xABCDEF123456789093 → Ξ0.7 ETH
-        Tx #148: 0xABCDEF123456789094 → Ξ0.8 ETH
-        Tx #149: 0xABCDEF123456789095 → Ξ0.9 ETH
-        Tx #150: 0xABCDEF123456789096 → Ξ0.0 ETH
-        Tx #151: 0xABCDEF123456789097 → Ξ0.1 ETH
-        Tx #152: 0xABCDEF123456789098 → Ξ0.2 ETH
-        Tx #153: 0xABCDEF123456789099 → Ξ0.3 ETH
-        Tx #154: 0xABCDEF12345678909A → Ξ0.4 ETH
-        Tx #155: 0xABCDEF12345678909B → Ξ0.5 ETH
-        Tx #156: 0xABCDEF12345678909C → Ξ0.6 ETH
-        Tx #157: 0xABCDEF12345678909D → Ξ0.7 ETH
-        Tx #158: 0xABCDEF12345678909E → Ξ0.8 ETH
-        Tx #159: 0xABCDEF12345678909F → Ξ0.9 ETH
-        Tx #160: 0xABCDEF1234567890A0 → Ξ0.0 ETH
-        Tx #161: 0xABCDEF1234567890A1 → Ξ0.1 ETH
-        Tx #162: 0xABCDEF1234567890A2 → Ξ0.2 ETH
-        Tx #163: 0xABCDEF1234567890A3 → Ξ0.3 ETH
-        Tx #164: 0xABCDEF1234567890A4 → Ξ0.4 ETH
-        Tx #165: 0xABCDEF1234567890A5 → Ξ0.5 ETH
-        Tx #166: 0xABCDEF1234567890A6 → Ξ0.6 ETH
-        Tx #167: 0xABCDEF1234567890A7 → Ξ0.7 ETH
-        Tx #168: 0xABCDEF1234567890A8 → Ξ0.8 ETH
-        Tx #169: 0xABCDEF1234567890A9 → Ξ0.9 ETH
-        Tx #170: 0xABCDEF1234567890AA → Ξ0.0 ETH
-        Tx #171: 0xABCDEF1234567890AB → Ξ0.1 ETH
-        Tx #172: 0xABCDEF1234567890AC → Ξ0.2 ETH
-        Tx #173: 0xABCDEF1234567890AD → Ξ0.3 ETH
-        Tx #174: 0xABCDEF1234567890AE → Ξ0.4 ETH
-        Tx #175: 0xABCDEF1234567890AF → Ξ0.5 ETH
-        Tx #176: 0xABCDEF1234567890B0 → Ξ0.6 ETH
-        Tx #177: 0xABCDEF1234567890B1 → Ξ0.7 ETH
-        Tx #178: 0xABCDEF1234567890B2 → Ξ0.8 ETH
-        Tx #179: 0xABCDEF1234567890B3 → Ξ0.9 ETH
-        Tx #180: 0xABCDEF1234567890B4 → Ξ0.0 ETH
-        Tx #181: 0xABCDEF1234567890B5 → Ξ0.1 ETH
-        Tx #182: 0xABCDEF1234567890B6 → Ξ0.2 ETH
-        Tx #183: 0xABCDEF1234567890B7 → Ξ0.3 ETH
-        Tx #184: 0xABCDEF1234567890B8 → Ξ0.4 ETH
-        Tx #185: 0xABCDEF1234567890B9 → Ξ0.5 ETH
-        Tx #186: 0xABCDEF1234567890BA → Ξ0.6 ETH
-        Tx #187: 0xABCDEF1234567890BB → Ξ0.7 ETH
-        Tx #188: 0xABCDEF1234567890BC → Ξ0.8 ETH
-        Tx #189: 0xABCDEF1234567890BD → Ξ0.9 ETH
-        Tx #190: 0xABCDEF1234567890BE → Ξ0.0 ETH
-        Tx #191: 0xABCDEF1234567890BF → Ξ0.1 ETH
-        Tx #192: 0xABCDEF1234567890C0 → Ξ0.2 ETH
-        Tx #193: 0xABCDEF1234567890C1 → Ξ0.3 ETH
-        Tx #194: 0xABCDEF1234567890C2 → Ξ0.4 ETH
-        Tx #195: 0xABCDEF1234567890C3 → Ξ0.5 ETH
-        Tx #196: 0xABCDEF1234567890C4 → Ξ0.6 ETH
-        Tx #197: 0xABCDEF1234567890C5 → Ξ0.7 ETH
-        Tx #198: 0xABCDEF1234567890C6 → Ξ0.8 ETH
-        Tx #199: 0xABCDEF1234567890C7 → Ξ0.9 ETH
-      </div>
-    </div>
+    <label for="selectNetwork" style="font-weight:700;">Select Network</label>
+    <select id="selectNetwork" aria-describedby="networkDesc">
+      <option value="https://mainnet.infura.io/v3/your_infura_id">Ethereum Mainnet</option>
+      <option value="https://sepolia.infura.io/v3/your_infura_id">Sepolia Testnet</option>
+      <option value="https://polygon-rpc.com">Polygon</option>
+      <option value="https://bsc-dataseed.binance.org/">Binance Smart Chain</option>
+    </select>
+    <p id="networkDesc" style="font-size:0.85rem; color:#009955; margin-top:4px;">
+      Change network to check balances and send transactions
+    </p>
 
-    <div class="section">
-      <div class="title">Powered by Avoda</div>
-      <p>© 2025 Avoda Wallet. All rights reserved.</p>
-    </div>
-  </div>
+    <div id="walletAddress" aria-live="polite" aria-atomic="true">Address: --</div>
+    <div id="walletBalance" aria-live="polite" aria-atomic="true">Balance: -- ETH</div>
+
+    <div id="qrcode" role="img" aria-label="QR code of wallet address"></div>
+
+    <form id="sendForm" aria-label="Send Ether Form" novalidate>
+      <label for="inputToAddress">Send To Address</label>
+      <input type="text" id="inputToAddress" placeholder="0x..." required autocomplete="off" spellcheck="false" />
+      <label for="inputAmount">Amount (ETH)</label>
+      <input type="number" id="inputAmount" step="0.0001" min="0.0001" placeholder="0.0" required />
+      <button type="submit" id="btnSendTx">📤 Send Transaction</button>
+    </form>
+
+    <ul id="txHistory" aria-live="polite" aria-atomic="true" style="list-style:none; padding-left:0;"></ul>
+
+  </section>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // Storage keys
+  const STORAGE_PIN = "avoda_pin";
+  const STORAGE_WALLET = "avoda_wallet_enc";
+
+  // Elements
+  const screens = {
+    pin: document.getElementById('screenPin'),
+    create: document.getElementById('screenCreate'),
+    import: document.getElementById('screenImport'),
+    wallet: document.getElementById('screenWallet')
+  };
+
+  const pinInputs = [
+    document.getElementById('pin0'),
+    document.getElementById('pin1'),
+    document.getElementById('pin2'),
+    document.getElementById('pin3')
+  ];
+
+  const btnUnlock = document.getElementById('btnUnlock');
+  const btnGoCreate = document.getElementById('btnGoCreate');
+  const btnGoImport = document.getElementById('btnGoImport');
+  const btnBackFromCreate = document.getElementById('btnBackFromCreate');
+  const btnBackFromImport = document.getElementById('btnBackFromImport');
+  const btnCreateWallet = document.getElementById('btnCreateWallet');
+  const btnImportWallet = document.getElementById('btnImportWallet');
+  const btnLogout = document.getElementById('btnLogout');
+  const selectNetwork = document.getElementById('selectNetwork');
+  const walletAddress = document.getElementById('walletAddress');
+  const walletBalance = document.getElementById('walletBalance');
+  const qrcodeContainer = document.getElementById('qrcode');
+  const sendForm = document.getElementById('sendForm');
+  const inputToAddress = document.getElementById('inputToAddress');
+  const inputAmount = document.getElementById('inputAmount');
+  const txHistoryList = document.getElementById('txHistory');
+  const inputPrivateKey = document.getElementById('inputPrivateKey');
+
+  // State variables
+  let wallet = null;
+  let provider = null;
+  let networkURL = selectNetwork.value;
+  let txHistory = [];
+
+  // Helpers
+  function showScreen(screen) {
+    Object.values(screens).forEach(s => s.classList.remove('active'));
+    screens[screen].classList.add('active');
+    clearSendForm();
+  }
+
+  function clearSendForm() {
+    inputToAddress.value = "";
+    inputAmount.value = "";
+    btnSendTx.disabled = false;
+  }
+
+  // Pin input autofocus
+  pinInputs.forEach((input, i) => {
+    input.addEventListener('input', () => {
+      if (input.value.length === 1 && i < pinInputs.length - 1) {
+        pinInputs[i+1].focus();
+      }
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && input.value.length === 0 && i > 0) {
+        pinInputs[i-1].focus();
+      }
+    });
+  });
+
+  // Encryption helpers
+  async function encryptPrivateKey(pk, pin) {
+    const enc = window.crypto.subtle;
+    const encKey = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(pin),
+      { name: "PBKDF2" },
+      false,
+      ["deriveKey"]
+    );
+    const key = await crypto.subtle.deriveKey(
+      { name: "PBKDF2", salt: new TextEncoder().encode("avoda_salt"), iterations: 100000, hash: "SHA-256" },
+      encKey,
+      { name: "AES-GCM", length: 256 },
+      true,
+      ["encrypt", "decrypt"]
+    );
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encrypted = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      key,
+      new TextEncoder().encode(pk)
+    );
+    const buff = new Uint8Array(encrypted);
+    const result = btoa(String.fromCharCode(...iv)) + ":" + btoa(String.fromCharCode(...buff));
+    return result;
+  }
+
+  async function decryptPrivateKey(encrypted, pin) {
+    try {
+      const enc = window.crypto.subtle;
+      const [ivB64, dataB64] = encrypted.split(":");
+      const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
+      const data = Uint8Array.from(atob(dataB64), c => c.charCodeAt(0));
+      const encKey = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(pin),
+        { name: "PBKDF2" },
+        false,
+        ["deriveKey"]
+      );
+      const key = await crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: new TextEncoder().encode("avoda_salt"), iterations: 100000, hash: "SHA-256" },
+        encKey,
+        { name: "AES-GCM", length: 256 },
+        true,
+        ["encrypt", "decrypt"]
+      );
+      const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv },
+        key,
+        data const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv },
+        key,
+        data
+      );
+      return new TextDecoder().decode(decrypted);
+    } catch (e) {
+      return null; // Decryption failed (wrong PIN or corrupted)
+    }
+  }
+
+  // Save encrypted private key in localStorage
+  async function saveWallet(pk, pin) {
+    const encrypted = await encryptPrivateKey(pk, pin);
+    localStorage.setItem(STORAGE_WALLET, encrypted);
+  }
+
+  // Load and decrypt private key from localStorage
+  async function loadWallet(pin) {
+    const encrypted = localStorage.getItem(STORAGE_WALLET);
+    if (!encrypted) return null;
+    return await decryptPrivateKey(encrypted, pin);
+  }
+
+  // Save PIN separately (hashed ideally, but plain for demo)
+  function savePin(pin) {
+    localStorage.setItem(STORAGE_PIN, pin);
+  }
+
+  function getPin() {
+    return localStorage.getItem(STORAGE_PIN);
+  }
+
+  // Generate and show wallet info on dashboard
+  function displayWalletInfo() {
+    walletAddress.textContent = "Address: " + wallet.address;
+    generateQRCode(wallet.address);
+    updateFakeBalance();
+    renderTxHistory();
+  }
+
+  // Generate QR code
+  function generateQRCode(text) {
+    qrcodeContainer.innerHTML = "";
+    new QRCode(qrcodeContainer, {
+      text,
+      width: 160,
+      height: 160,
+      colorDark: "#00ff7f",
+      colorLight: "#002211",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
+
+  // Fake balance for demo (random between 0 and 10)
+  function updateFakeBalance() {
+    const fakeBalance = (Math.random() * 10).toFixed(5);
+    walletBalance.textContent = `Balance: ${fakeBalance} ETH (fake)`;
+  }
+
+  // Render transaction history
+  function renderTxHistory() {
+    txHistoryList.innerHTML = "";
+    if (txHistory.length === 0) {
+      txHistoryList.innerHTML = "<li>No transactions yet</li>";
+      return;
+    }
+    txHistory.slice().reverse().forEach(tx => {
+      const li = document.createElement("li");
+      li.textContent = tx;
+      txHistoryList.appendChild(li);
+    });
+  }
+
+  // Switch network
+  function switchNetwork(url) {
+    networkURL = url;
+    // Here you can update provider if connecting to real network later
+    updateFakeBalance();
+  }
+
+  // Clear PIN inputs
+  function clearPinInputs() {
+    pinInputs.forEach(i => i.value = "");
+    pinInputs[0].focus();
+  }
+
+  // Unlock wallet using PIN
+  btnUnlock.addEventListener("click", async () => {
+    const pin = pinInputs.map(i => i.value).join("");
+    if (pin.length !== 4) {
+      alert("Enter 4-digit PIN");
+      return;
+    }
+    const savedPin = getPin();
+
+    if (!savedPin) {
+      // First time: save pin but no wallet yet
+      savePin(pin);
+      alert("PIN saved! Now create or import your wallet.");
+      clearPinInputs();
+    } else if (pin === savedPin) {
+      // Try to load wallet
+      const pk = await loadWallet(pin);
+      if (!pk) {
+        alert("No wallet found for this PIN. Create or import your wallet.");
+        clearPinInputs();
+        return;
+      }
+      wallet = new ethers.Wallet(pk);
+      displayWalletInfo();
+      showScreen("wallet");
+    } else {
+      alert("Wrong PIN!");
+      clearPinInputs();
+    }
+  });
+
+  // Go to Create Wallet screen
+  btnGoCreate.addEventListener("click", () => {
+    showScreen("create");
+  });
+
+  // Go to Import Wallet screen
+  btnGoImport.addEventListener("click", () => {
+    showScreen("import");
+  });
+
+  // Back from Create to PIN
+  btnBackFromCreate.addEventListener("click", () => {
+    showScreen("pin");
+    clearPinInputs();
+  });
+
+  // Back from Import to PIN
+  btnBackFromImport.addEventListener("click", () => {
+    showScreen("pin");
+    clearPinInputs();
+    inputPrivateKey.value = "";
+  });
+
+  // Create new wallet and save encrypted
+  btnCreateWallet.addEventListener("click", async () => {
+    const pin = getPin();
+    if (!pin) {
+      alert("Set your PIN first on unlock screen.");
+      return;
+    }
+    wallet = ethers.Wallet.createRandom();
+    await saveWallet(wallet.privateKey, pin);
+    alert(`Wallet created!\nAddress:\n${wallet.address}\n\nSave your private key safely!`);
+    displayWalletInfo();
+    showScreen("wallet");
+  });
+
+  // Import wallet by private key
+  btnImportWallet.addEventListener("click", async () => {
+    const pin = getPin();
+    if (!pin) {
+      alert("Set your PIN first on unlock screen.");
+      return;
+    }
+    let pk = inputPrivateKey.value.trim();
+    if (!pk.startsWith("0x") || pk.length !== 66) {
+      alert("Private key must start with 0x and be 64 hex characters long.");
+      return;
+    }
+    try {
+      wallet = new ethers.Wallet(pk);
+      await saveWallet(pk, pin);
+      alert(`Wallet imported!\nAddress:\n${wallet.address}`);
+      displayWalletInfo();
+      showScreen("wallet");
+      inputPrivateKey.value = "";
+    } catch (e) {
+      alert("Invalid private key.");
+    }
+  });
+
+  // Logout: clear wallet and go to PIN screen
+  btnLogout.addEventListener("click", () => {
+    wallet = null;
+    txHistory = [];
+    walletAddress.textContent = "Address: --";
+    walletBalance.textContent = "Balance: -- ETH";
+    qrcodeContainer.innerHTML = "";
+    showScreen("pin");
+    clearPinInputs();
+  });
+
+  // Change network
+  selectNetwork.addEventListener("change", (e) => {
+    switchNetwork(e.target.value);
+  });
+
+  // Send transaction (fake only, just adds to history)
+  sendForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!wallet) {
+      alert("Unlock wallet first.");
+      return;
+    }
+    const to = inputToAddress.value.trim();
+    const amount = parseFloat(inputAmount.value.trim());
+    if (!ethers.utils.isAddress(to)) {
+      alert("Invalid recipient address.");
+      return;
+    }
+    if (isNaN(amount) || amount <= 0) {
+      alert("Enter a valid amount.");
+      return;
+    }
+    // Fake send tx (just add to history)
+    const txMsg = `Sent ${amount.toFixed(5)} ETH to ${to}`;
+    txHistory.push(txMsg);
+    renderTxHistory();
+    clearSendForm();
+    alert("Transaction simulated (fake).");
+  });
+
+  // Init app
+  showScreen("pin");
+  clearPinInputs();
+  switchNetwork(selectNetwork.value);
+
+})();
+</script>
+
 </body>
 </html>
