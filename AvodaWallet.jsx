@@ -1,0 +1,1 @@
+import "./AvodaWallet.css";
