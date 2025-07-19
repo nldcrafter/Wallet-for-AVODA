@@ -163,7 +163,33 @@
   <div class="container">
 
     <h1>Avoda Wallet 🌿</h1>
+<div id="walletUI" class="wallet-ui" style="background:#000; color:#fff; padding:20px; border-radius:16px; max-width:400px; margin:auto; margin-top:30px; text-align:center;">
+  <h2>AVODA Wallet</h2>
 
+  <button onclick="generateWallet()" style="margin-bottom: 10px;">🔐 Generate Wallet</button>
+
+  <div id="walletInfo" style="display:none;">
+    <p><strong>Address:</strong></p>
+    <div id="walletAddress" style="word-break:break-all;">--</div>
+
+    <button onclick="copyAddress()">📋 Copy Address</button>
+    <button onclick="showQR()">📷 QR Code</button>
+
+    <p><strong>Balance:</strong> <span id="walletBalance">--</span> ETH</p>
+
+    <p><strong>Private Key:</strong></p>
+    <div id="privateKey" style="word-break:break-all;">•••••••••••••••••••••</div>
+    <button onclick="togglePrivateKey()">👁 Show/Hide Key</button>
+
+    <hr style="margin: 20px 0;">
+    <h3>🚀 Send ETH</h3>
+    <input id="sendTo" placeholder="Recipient Address" style="width:100%;padding:8px;margin:4px 0;" />
+    <input id="sendAmount" placeholder="Amount in ETH" style="width:100%;padding:8px;margin:4px 0;" />
+    <button onclick="sendETH()">📤 Send ETH</button>
+  </div>
+
+  <canvas id="qrCanvas" style="margin-top:20px; display:none;"></canvas>
+</div>
     <!-- PIN screen -->
     <div id="pinScreen" class="screen active">
       <p style="text-align:center; font-weight:600;">Enter 4-digit PIN to unlock wallet</p>
@@ -450,6 +476,51 @@ document.getElementById("networkSelect").addEventListener("change", async () => 
 
 // Initialize default network
 initWeb3(document.getElementById("networkSelect").value);
+</script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+<script>
+  let wallet;
+  let showKey = false;
+
+  async function generateWallet() {
+    wallet = ethers.Wallet.createRandom();
+    document.getElementById("walletAddress").innerText = wallet.address;
+    document.getElementById("privateKey").innerText = "•••••••••••••••••••••";
+    document.getElementById("walletInfo").style.display = "block";
+
+    const provider = new ethers.InfuraProvider("sepolia");
+    const balance = await provider.getBalance(wallet.address);
+    document.getElementById("walletBalance").innerText = ethers.formatEther(balance);
+  }
+
+  function copyAddress() {
+    if (!wallet) return;
+    navigator.clipboard.writeText(wallet.address);
+    alert("Copied Address");
+  }
+
+  function togglePrivateKey() {
+    if (!wallet) return;
+    showKey = !showKey;
+    document.getElementById("privateKey").innerText = showKey ? wallet.privateKey : "•••••••••••••••••••••";
+  }
+
+  function showQR() {
+    if (!wallet) return;
+    const qr = new QRious({
+      element: document.getElementById('qrCanvas'),
+      value: wallet.address,
+      size: 200
+    });
+    document.getElementById("qrCanvas").style.display = "block";
+  }
+
+  function sendETH() {
+    const to = document.getElementById("sendTo").value;
+    const amt = document.getElementById("sendAmount").value;
+    alert("Sending " + amt + " ETH to " + to + " (UI only — not actually sending)");
+  }
 </script>
 </body>
 </html>  
