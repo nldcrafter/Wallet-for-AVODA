@@ -345,16 +345,15 @@
   // Storage keys
   const STORAGE_PIN = 'avoda_pin';
   const STORAGE_WALLET = 'avoda_wallet_enc';
-  const STORAGE_BALANCE = 'avoda_balance';
   const STORAGE_TXS = 'avoda_txs';
 
   // State variables
   let wallet = null;
   let provider = null;
-  let currentNetwork = selectNetwork.value;
+  let currentPin = null;
   let txHistory = [];
 
-  // Utility: show one screen only
+  // Utility: Show one screen only
   function showScreen(name) {
     Object.values(screens).forEach(s => s.classList.remove('active'));
     screens[name].classList.add('active');
@@ -404,301 +403,218 @@
       key,
       new TextEncoder().encode(pk)
     );
-    // Encode iv and encrypted data as base64 and join with ':'
     const ivB64 = btoa(String.fromCharCode(...iv));
     const dataB64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
     return ivB64 + ':' + dataB64;
   }
 
-// Decrypt private key with PIN
-async function decryptPrivateKey(encrypted, pin) {
-  try {
-    const [ivB64, dataB64] = encrypted.split(':');
-    const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
-    const data = Uint8Array.from(atob(dataB64), c => c.charCodeAt(0));
+  // Decrypt private key with PIN
+  async function decryptPrivateKey(encrypted, pin) {
+    try {
+      const [ivB64, dataB64] = encrypted.split(':');
+      const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
+      const data = Uint8Array.from(atob(dataB64), c => c.charCodeAt(0));
 
-    const encKeyMaterial = await crypto.subtle.importKey(
-      'raw',
-      new TextEncoder().encode(pin),
-      { name: 'PBKDF2' },
-      false,
-      ['deriveKey']
-    );
+      const encKeyMaterial = await crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(pin),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveKey']
+      );
 
-    const key = await crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt: new TextEncoder().encode('avoda_salt'), iterations: 100000, hash: 'SHA-256' },
-      encKeyMaterial,
-      { name: 'AES-GCM', length: 256 },
-      true,
-      ['encrypt', 'decrypt']
-    );
+      const key = await crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt: new TextEncoder().encode('avoda_salt'), iterations: 100000, hash: 'SHA-256' },
+        encKeyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+      );
 
-    const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv },
-      key,
-      data
-    );
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        data
+      );
 
-    return new TextDecoder().decode(decrypted);
-  } catch (err) {
-    // Wrong PIN or corrupted data
-    return null;
+      return new TextDecoder().decode(decrypted);
+    } catch (err) {
+      return null;
+    }
   }
-}
 
-// Load wallet from localStorage
-async function loadWallet(pin) {
-  const encrypted = localStorage.getItem(STORAGE_WALLET);
-  if (!encrypted) return null;
-  const pk = await decryptPrivateKey(encrypted, pin);
-  if (!pk) return null;
-  try {
-    wallet = new ethers.Wallet(pk);
-    return wallet;
-  } catch {
-    return null;
+  // Load wallet from localStorage
+  async function loadWallet(pin) {
+    const encrypted = localStorage.getItem(STORAGE_WALLET);
+    if (!encrypted) return null;
+    const pk = await decryptPrivateKey(encrypted, pin);
+    if (!pk) return null;
+    try {
+      wallet = new ethers.Wallet(pk);
+      return wallet;
+    } catch {
+      return null;
+    }
   }
-}
 
-// Save wallet encrypted with PIN
-async function saveWallet(pk, pin) {
-  const encrypted = await encryptPrivateKey(pk, pin);
-  localStorage.setItem(STORAGE_WALLET, encrypted);
-  localStorage.setItem(STORAGE_PIN, pin);
-}
-
-// Update UI with wallet info
-async function updateWalletUI() {
-  walletAddress.textContent = 'Address: ' + wallet.address;
-  // Create QR code
-  qrcodeContainer.innerHTML = '';
-  new QRCode(qrcodeContainer, {
-    text: wallet.address,
-    width: 160,
-    height: 160,
-    colorDark: '#00ff7f',
-    colorLight: '#002211',
-  });
-  await updateBalance();
-  updateTxHistoryUI();
-}
-
-// Update balance
-async function updateBalance() {
-  if (!wallet) return;
-  btnSendTx.disabled = true;
-  walletBalance.textContent = 'Loading balance...';
-  try {
-    provider = new ethers.JsonRpcProvider(selectNetwork.value);
-    const bal = await provider.getBalance(wallet.address);
-    const eth = ethers.formatEther(bal);
-    walletBalance.textContent = `Balance: ${parseFloat(eth).toFixed(4)} ETH`;
-  } catch {
-    walletBalance.textContent = 'Balance: --';
+  // Save wallet encrypted with PIN
+  async function saveWallet(pk, pin) {
+    const encrypted = await encryptPrivateKey(pk, pin);
+    localStorage.setItem(STORAGE_WALLET, encrypted);
+    localStorage.setItem(STORAGE_PIN, pin);
   }
-  btnSendTx.disabled = false;
-}
 
-// Update transaction history UI from localStorage
-function updateTxHistoryUI() {
-  txHistoryList.innerHTML = '';
-  txHistory = JSON.parse(localStorage.getItem('avoda_tx_history') || '[]');
-  if (txHistory.length === 0) {
-    txHistoryList.innerHTML = '<li>No transactions yet.</li>';
-    return;
+  // Update wallet UI info
+  async function updateWalletUI() {
+    walletAddress.textContent = 'Address: ' + wallet.address;
+    qrcodeContainer.innerHTML = '';
+    new QRCode(qrcodeContainer, {
+      text: wallet.address,
+      width: 160,
+      height: 160,
+      colorDark: '#00ff7f',
+      colorLight: '#002211',
+    });
+    await updateBalance();
+    updateTxHistoryUI();
   }
-  txHistory.slice().reverse().forEach(tx => {
-    const li = document.createElement('li');
-    li.textContent = `${tx.type} ${tx.amount} ETH to ${tx.to} at ${new Date(tx.date).toLocaleString()}`;
-    txHistoryList.appendChild(li);
-  });
-}
 
-// Add transaction to history and save
-function addTransaction(type, to, amount) {
-  txHistory.push({ type, to, amount, date: Date.now() });
-  localStorage.setItem('avoda_tx_history', JSON.stringify(txHistory));
-  updateTxHistoryUI();
-}
+  // Update balance display
+  async function updateBalance() {
+    if (!wallet) return;
+    btnSendTx.disabled = true;
+    walletBalance.textContent = 'Loading balance...';
+    try {
+      provider = new ethers.JsonRpcProvider(selectNetwork.value);
+      const bal = await provider.getBalance(wallet.address);
+      const eth = ethers.formatEther(bal);
+      walletBalance.textContent = `Balance: ${parseFloat(eth).toFixed(4)} ETH`;
+    } catch {
+      walletBalance.textContent = 'Balance: --';
+    }
+    btnSendTx.disabled = false;
+  }
 
-// Handle Unlock button
-btnUnlock.onclick = async () => {
-  const pin = pinInputs.map(i => i.value).join('');
-  if (pin.length !== 4 && pin.length !== 6) {
-    alert('PIN must be 4 or 6 digits');
-    return;
+  // Update transaction history UI
+  function updateTxHistoryUI() {
+    txHistoryList.innerHTML = '';
+    txHistory = JSON.parse(localStorage.getItem(STORAGE_TXS) || '[]');
+    if (txHistory.length === 0) {
+      txHistoryList.innerHTML = '<li>No transactions yet.</li>';
+      return;
+    }
+    txHistory.slice().reverse().forEach(tx => {
+      const li = document.createElement('li');
+      li.textContent = `${tx.type} ${tx.amount} ETH to ${tx.to} at ${new Date(tx.date).toLocaleString()}`;
+      txHistoryList.appendChild(li);
+    });
   }
-  const loadedWallet = await loadWallet(pin);
-  if (!loadedWallet) {
-    alert('Invalid PIN or no wallet found.');
-    return;
-  }
-  wallet = loadedWallet;
-  currentPin = pin;
-  showScreen('wallet');
-  await updateWalletUI();
-};
 
-// Handle Create Wallet button
-btnCreateWallet.onclick = async () => {
-  const pin = pinInputs.map(i => i.value).join('');
-  if (pin.length !== 4 && pin.length !== 6) {
-    alert('Set a 4 or 6 digit PIN on the PIN screen before creating wallet.');
-    return;
+  // Add transaction and save
+  function addTransaction(type, to, amount) {
+    txHistory.push({ type, to, amount, date: Date.now() });
+    localStorage.setItem(STORAGE_TXS, JSON.stringify(txHistory));
+    updateTxHistoryUI();
   }
-  const newWallet = ethers.Wallet.createRandom();
-  await saveWallet(newWallet.privateKey, pin);
-  wallet = newWallet;
-  currentPin = pin;
-  alert('Wallet created and saved securely!');
-  showScreen('wallet');
-  await updateWalletUI();
-};
 
-// Handle Import Wallet button
-btnImportWallet.onclick = async () => {
-  const pin = pinInputs.map(i => i.value).join('');
-  if (pin.length !== 4 && pin.length !== 6) {
-    alert('Set a 4 or 6 digit PIN on the PIN screen before importing wallet.');
-    return;
-  }
-  const pk = inputPrivateKey.value.trim();
-  try {
-    const importedWallet = new ethers.Wallet(pk);
-    await saveWallet(pk, pin);
-    wallet = importedWallet;
+  // Unlock button handler
+  btnUnlock.onclick = async () => {
+    const pin = pinInputs.map(i => i.value).join('');
+    if (pin.length !== 4 && pin.length !== 6) {
+      alert('PIN must be 4 or 6 digits');
+      return;
+    }
+    const loadedWallet = await loadWallet(pin);
+    if (!loadedWallet) {
+      alert('Invalid PIN or no wallet found.');
+      return;
+    }
+    wallet = loadedWallet;
     currentPin = pin;
-    alert('Wallet imported and saved securely!');
     showScreen('wallet');
     await updateWalletUI();
-  } catch {
-    alert('Invalid private key.');
-  }
-};
+  };
 
-// Handle Logout
-btnLogout.onclick = () => {
-  wallet = null;
-  currentPin = null;
-  clearPinInputs();
-  showScreen('pin');
-};
-
-// Clear PIN inputs
-function clearPinInputs() {
-  pinInputs.forEach(input => input.value = '');
-  pinInputs[0].focus();
-}
-
-// Handle Network change
-selectNetwork.onchange = async () => {
-  if (!wallet) return;
-  await updateBalance();
-};
-
-// Handle Send Transaction (fake send)
-sendForm.onsubmit = async (e) => {
-  e.preventDefault();
-  const to = inputToAddress.value.trim();
-  const amount = parseFloat(inputAmount.value);
-  if (!ethers.isAddress(to)) {
-    alert('Invalid recipient address');
-    return;
-  }
-  if (isNaN(amount) || amount <= 0) {
-    alert('Invalid amount');
-    return;
-  }
-  // For demo, just add to history, no real send
-  addTransaction('Sent', to, amount.toFixed(4));
-  alert(`Pretending to send ${amount} ETH to ${to} (no real transaction)`);
-  clearSendForm();
-};
-
-// Initialize app
-let currentPin = null;
-clearPinInputs();
-showScreen('pin');
-})();
-</script>
-  <script>
-  const walletKey = "avoda_wallet";
-
-  function createWallet() {
-    const pin = getPinValue();
-    if (!pin || pin.length < 4) {
-      alert("Please enter a valid 4+ digit PIN.");
+  // Create wallet button handler
+  btnCreateWallet.onclick = async () => {
+    const pin = pinInputs.map(i => i.value).join('');
+    if (pin.length !== 4 && pin.length !== 6) {
+      alert('Set a 4 or 6 digit PIN before creating wallet.');
       return;
     }
-    const fakeWallet = {
-      address: "0xAVODA" + Math.floor(Math.random() * 1000000),
-      privateKey: "private_key_" + Math.random().toString(36).substring(2)
-    };
-    const encrypted = btoa(JSON.stringify(fakeWallet) + pin); // fake encryption
-    localStorage.setItem(walletKey, encrypted);
-    alert("Wallet created!");
-    unlockWallet(); // auto-login
-  }
-
-  function importWallet() {
-    const pin = getPinValue();
-    if (!pin || pin.length < 4) {
-      alert("Please enter a valid 4+ digit PIN.");
-      return;
-    }
-    const input = prompt("Paste your private key to import:");
-    if (!input) return alert("No input provided.");
-    const fakeWallet = {
-      address: "0xIMPORTED" + Math.floor(Math.random() * 1000000),
-      privateKey: input
-    };
-    const encrypted = btoa(JSON.stringify(fakeWallet) + pin);
-    localStorage.setItem(walletKey, encrypted);
-    alert("Wallet imported!");
-    unlockWallet(); // auto-login
-  }
-
-  function unlockWallet() {
-    const pin = getPinValue();
-    const encrypted = localStorage.getItem(walletKey);
-    if (!encrypted) {
-      alert("No wallet found. Please create or import.");
-      return;
-    }
-    const decrypted = atob(encrypted);
-    if (!decrypted.endsWith(pin)) {
-      alert("Invalid PIN or wallet.");
-      return;
-    }
-    const walletJson = decrypted.slice(0, -pin.length);
-    const wallet = JSON.parse(walletJson);
+    const newWallet = ethers.Wallet.createRandom();
+    await saveWallet(newWallet.privateKey, pin);
+    wallet = newWallet;
     currentPin = pin;
-    document.getElementById("walletAddress").textContent = wallet.address;
-    showScreen("wallet");
-  }
+    alert('Wallet created and saved securely!');
+    showScreen('wallet');
+    await updateWalletUI();
+  };
 
-  function getPinValue() {
-    return [...document.querySelectorAll(".pin-input")]
-      .map(input => input.value)
-      .join("");
-  }
+  // Import wallet button handler
+  btnImportWallet.onclick = async () => {
+    const pin = pinInputs.map(i => i.value).join('');
+    if (pin.length !== 4 && pin.length !== 6) {
+      alert('Set a 4 or 6 digit PIN before importing wallet.');
+      return;
+    }
+    const pk = inputPrivateKey.value.trim();
+    try {
+      const importedWallet = new ethers.Wallet(pk);
+      await saveWallet(pk, pin);
+      wallet = importedWallet;
+      currentPin = pin;
+      alert('Wallet imported and saved securely!');
+      showScreen('wallet');
+      await updateWalletUI();
+    } catch {
+      alert('Invalid private key.');
+    }
+  };
 
-  function clearPinInputs() {
-    document.querySelectorAll(".pin-input").forEach(input => input.value = "");
-  }
-
-  function showScreen(screenId) {
-    document.querySelectorAll(".screen").forEach(screen => {
-      screen.classList.remove("active");
-    });
-    document.getElementById(screenId).classList.add("active");
-  }
-
-  // Initialize
-  window.onload = () => {
+  // Logout button handler
+  btnLogout.onclick = () => {
+    wallet = null;
+    currentPin = null;
     clearPinInputs();
     showScreen('pin');
+  };
+
+  // Clear PIN inputs
+  function clearPinInputs() {
+    pinInputs.forEach(input => input.value = '');
+    pinInputs[0].focus();
   }
+
+  // Network selector change handler
+  selectNetwork.onchange = async () => {
+    if (!wallet) return;
+    await updateBalance();
+  };
+
+  // Send transaction form handler (fake send)
+  sendForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const to = inputToAddress.value.trim();
+    const amount = parseFloat(inputAmount.value);
+    if (!ethers.isAddress(to)) {
+      alert('Invalid recipient address');
+      return;
+    }
+    if (isNaN(amount) || amount <= 0) {
+      alert('Invalid amount');
+      return;
+    }
+    addTransaction('Sent', to, amount.toFixed(4));
+    alert(`Pretending to send ${amount} ETH to ${to} (no real transaction)`);
+    clearSendForm();
+  };
+
+  // Initialize app
+  clearPinInputs();
+  showScreen('pin');
+
+})();
   </script>
 </body>
 </html>
