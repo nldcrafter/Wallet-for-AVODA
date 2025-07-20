@@ -621,5 +621,84 @@ clearPinInputs();
 showScreen('pin');
 })();
 </script>
+  <script>
+  const walletKey = "avoda_wallet";
+
+  function createWallet() {
+    const pin = getPinValue();
+    if (!pin || pin.length < 4) {
+      alert("Please enter a valid 4+ digit PIN.");
+      return;
+    }
+    const fakeWallet = {
+      address: "0xAVODA" + Math.floor(Math.random() * 1000000),
+      privateKey: "private_key_" + Math.random().toString(36).substring(2)
+    };
+    const encrypted = btoa(JSON.stringify(fakeWallet) + pin); // fake encryption
+    localStorage.setItem(walletKey, encrypted);
+    alert("Wallet created!");
+    unlockWallet(); // auto-login
+  }
+
+  function importWallet() {
+    const pin = getPinValue();
+    if (!pin || pin.length < 4) {
+      alert("Please enter a valid 4+ digit PIN.");
+      return;
+    }
+    const input = prompt("Paste your private key to import:");
+    if (!input) return alert("No input provided.");
+    const fakeWallet = {
+      address: "0xIMPORTED" + Math.floor(Math.random() * 1000000),
+      privateKey: input
+    };
+    const encrypted = btoa(JSON.stringify(fakeWallet) + pin);
+    localStorage.setItem(walletKey, encrypted);
+    alert("Wallet imported!");
+    unlockWallet(); // auto-login
+  }
+
+  function unlockWallet() {
+    const pin = getPinValue();
+    const encrypted = localStorage.getItem(walletKey);
+    if (!encrypted) {
+      alert("No wallet found. Please create or import.");
+      return;
+    }
+    const decrypted = atob(encrypted);
+    if (!decrypted.endsWith(pin)) {
+      alert("Invalid PIN or wallet.");
+      return;
+    }
+    const walletJson = decrypted.slice(0, -pin.length);
+    const wallet = JSON.parse(walletJson);
+    currentPin = pin;
+    document.getElementById("walletAddress").textContent = wallet.address;
+    showScreen("wallet");
+  }
+
+  function getPinValue() {
+    return [...document.querySelectorAll(".pin-input")]
+      .map(input => input.value)
+      .join("");
+  }
+
+  function clearPinInputs() {
+    document.querySelectorAll(".pin-input").forEach(input => input.value = "");
+  }
+
+  function showScreen(screenId) {
+    document.querySelectorAll(".screen").forEach(screen => {
+      screen.classList.remove("active");
+    });
+    document.getElementById(screenId).classList.add("active");
+  }
+
+  // Initialize
+  window.onload = () => {
+    clearPinInputs();
+    showScreen('pin');
+  }
+  </script>
 </body>
 </html>
