@@ -1,1 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Avoda Wallet Lite 🌿</title>
 
+<!-- Ethers.js and QRCode.js -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.6.0/dist/ethers.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+  /* Basic Reset */
+  * { box-sizing: border-box; }
+  body, html {
+    margin:0; padding:0; height:100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #051620 0%, #003b31 100%);
+    color: #c1dede;
+    display: flex; justify-content: center; align-items: center;
+    overflow-x: hidden;
+  }
+  #app {
+    width: 420px; max-width: 95vw;
+    background: #002922;
+    border-radius: 24px;
+    padding: 30px;
+    box-shadow: 0 0 50px #00ff7faa;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+    position: relative;
+  }
+  h1 {
+    color: #00ff7f;
+    text-align: center;
+    font-weight: 900;
+    letter-spacing: 3px;
+    font-size: 2rem;
+    margin: 0 0 25px 0;
+    text-shadow: 0 0 12px #00ff7fbb;
+  }
+
+  /* Screens */
+  .screen {
+    display: none;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .screen.active {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Loading Screen */
+  #loadingScreen {
+    text-align: center;
+  }
+  .loader {
+    border: 5px solid #004d3322;
+    border-top: 5px solid #00ff7f;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+  }
+  @keyframes spin {
+    0% {transform: rotate(0deg);}
+    100% {transform: rotate(360deg);}
+  }
+
+  /* Buttons */
+  button {
+    background: #00ff7f;
+    border: none;
+    color: #00331a;
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding: 14px 22px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+    width: 100%;
+    margin-top: 15px;
+    box-shadow: 0 0 25px #00ff7faa;
+  }
+  button:hover:not(:disabled) {
+    background: #00cc66;
+    box-shadow: 0 0 40px #00ff7fff;
+  }
+  button:disabled {
+    background: #004422;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  /* Inputs */
+  input, select, textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 16px;
+    border: none;
+    background: #00442f;
+    color: #00ff7f;
+    font-size: 1rem;
+    outline: none;
+    box-shadow: inset 0 0 10px #00ff7f88;
+    transition: box-shadow 0.3s ease;
+    resize: none;
+  }
+  input::placeholder, textarea::placeholder {
+    color: #007744cc;
+  }
+  input:focus, textarea:focus, select:focus {
+    box-shadow: 0 0 25px #00ff7fff inset;
+  }
+
+  /* QR Code */
+  #qrcode {
+    margin: 25px auto 10px auto;
+    width: 180px;
+    height: 180px;
+    background: #002211;
+    border-radius: 28px;
+    box-shadow: 0 0 40px #00ff7faa inset;
+  }
+
+  /* Wallet info */
+  #walletAddress, #walletBalance {
+    background: #003322cc;
+    padding: 16px 12px;
+    border-radius: 22px;
+    font-weight: 600;
+    text-align: center;
+    margin-top: 18px;
+    font-size: 1rem;
+    word-break: break-word;
+    user-select: text;
+    box-shadow: 0 0 30px #00ff7f88;
+  }
+  #walletBalance {
+    font-size: 1.4rem;
+    color: #00ff7f;
+  }
+
+  /* Send form */
+  #sendForm label {
+    display: block;
+    font-weight: 700;
+    margin-top: 20px;
+    margin-bottom: 8px;
+    font-size: 1rem;
+  }
+  #sendForm input {
+    font-size: 1.1rem;
+  }
+
+  /* Tx History */
+  #txHistory {
+    margin-top: 25px;
+    max-height: 170px;
+    overflow-y: auto;
+    background: #003b20;
+    border-radius: 20px;
+    padding: 15px 18px;
+    box-shadow: inset 0 0 20px #00ff7faa;
+    font-size: 0.95rem;
+  }
+  #txHistory li {
+    margin-bottom: 12px;
+    color: #a0f5a0;
+    word-break: break-word;
+    font-family: monospace;
+  }
+
+  /* Nav links */
+  .navLink {
+    margin-top: 25px;
+    text-align: center;
+    color: #00ff7fcc;
+    cursor: pointer;
+    font-weight: 700;
+    text-decoration: underline;
+    user-select: none;
+  }
+  .navLink:hover {
+    color: #00cc66;
+  }
+
+  /* Responsive */
+  @media (max-width: 450px) {
+    #app {
+      width: 100vw;
+      height: 100vh;
+      border-radius: 0;
+      padding: 20px;
+      box-shadow: none;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="app" role="main" aria-live="polite" aria-label="Avoda Wallet Application">
+
+  <h1>AVODA WALLET 🌿</h1>
+
+  <!-- Loading Screen -->
+  <section id="loadingScreen" class="screen active" aria-label="Loading">
+    <div class="loader"></div>
+    <p>Loading wallet data...</p>
+  </section>
+
+  <!-- Home Screen -->
+  <section id="homeScreen" class="screen" aria-label="Home">
+    <button id="btnCreateWallet">🆕 Create New Wallet</button>
+    <button id="btnImportWallet">📥 Import Wallet</button>
+  </section>
+
+  <!-- Create Wallet Screen -->
+  <section id="createWalletScreen" class="screen" aria-label="Create Wallet">
+    <button class="navLink" id="backFromCreate">⬅ Back</button>
+    <button id="generateWalletBtn">Generate Wallet</button>
+    <textarea id="generatedPrivateKey" rows="4" readonly style="margin-top:15px; font-family: monospace; font-size:1rem; background:#001f0f; color:#00ff7f; border-radius:14px; padding:12px;"></textarea>
+    <button id="saveNewWalletBtn" disabled>Save Wallet &amp; Connect</button>
+  </section>
+
+  <!-- Import Wallet Screen -->
+  <section id="importWalletScreen" class="screen" aria-label="Import Wallet">
+    <button class="navLink" id="backFromImport">⬅ Back</button>
+    <label for="importPrivateKeyInput" style="font-weight:700; margin-top:15px;">Paste Private Key</label>
+    <textarea id="importPrivateKeyInput" rows="4" placeholder="0x..." spellcheck="false" autocomplete="off" style="background:#001f0f; color:#00ff7f; border-radius:14px; padding:12px;"></textarea>
+    <button id="importWalletBtn" style="margin-top:15px;">Import &amp; Connect</button>
+  </section>
+
+  <!-- Wallet Dashboard Screen -->
+  <section id="walletScreen" class="screen" aria-label="Wallet Dashboard">
+    <button class="navLink" id="logoutBtn">⬅ Logout</button>
+
+    <label for="networkSelect" style="font-weight:700; margin-top:20px;">Select Network</label>
+    <select id="networkSelect" aria-label="Select blockchain network">
+      <option value="https://mainnet.infura.io/v3/YOUR_INFURA_ID">Ethereum Mainnet</option>
+      <option value="https://sepolia.infura.io/v3/YOUR_INFURA_ID">Sepolia Testnet</option>
+      <option value="https://polygon-rpc.com">Polygon</option>
+      <option value="https://bsc-dataseed.binance.org/">Binance Smart Chain</option>
+    </select>
+
+    <div id="walletAddress" aria-live="polite" aria-atomic="true" style="margin-top:20px;">Address: --</div>
+    <div id="walletBalance" aria-live="polite" aria-atomic="true">Balance: --</div>
+
+    <div id="qrcode" role="img" aria-label="QR code of wallet address"></div>
+
+    <form id="sendForm" aria-label="Send Ether" novalidate>
+      <label for="toAddress">Send To Address</label>
+      <input type="text" id="toAddress" placeholder="0x..." required autocomplete="off" spellcheck="false" />
+      <label for="amount">Amount (ETH)</label>
+      <input type="number" id="amount" step="0.0001" min="0.0001" placeholder="0.0" required />
+      <button type="submit">Send Transaction</button>
+    </form>
+
+    <ul id="txHistory" aria-live="polite" aria-atomic="true" style="list-style:none; padding-left:0;"></ul>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // DOM elements
+  const screens = {
+    loading: document.getElementById('loadingScreen'),
+    home: document.getElementById('homeScreen'),
+    create: document.getElementById('createWalletScreen'),
+    import: document.getElementById('importWalletScreen'),
+    wallet: document.getElementById('walletScreen'),
+  };
+
+  const btnCreateWallet = document.getElementById('btnCreateWallet');
+  const btnImportWallet = document.getElementById('btnImportWallet');
+  const backFromCreate = document.getElementById('backFromCreate');
+  const backFromImport = document.getElementById('backFromImport');
+  const generateWalletBtn = document.getElementById('generateWalletBtn');
+  const saveNewWalletBtn = document.getElementById('saveNewWalletBtn');
+  const generatedPrivateKey = document.getElementById('generatedPrivateKey');
+  const importPrivateKeyInput = document.getElementById('importPrivateKeyInput');
+  const importWalletBtn = document.getElementById('importWalletBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const networkSelect = document.getElementById('networkSelect');
+  const walletAddress = document.getElementById('walletAddress');
+  const walletBalance = document.getElementById('walletBalance');
+  const qrcodeContainer = document.getElementById('qrcode');
+const sendForm = document.getElementById('sendForm');
+const toAddressInput = document.getElementById('toAddress');
+const amountInput = document.getElementById('amount');
+const txHistory = document.getElementById('txHistory');
+
+let currentWallet = null;
+let provider = null;
+let signer = null;
+let qrCode = null;
+
+// Utility: Show screen by key
+function showScreen(name) {
+  for (const key in screens) {
+    if (key === name) {
+      screens[key].classList.add('active');
+    } else {
+      screens[key].classList.remove('active');
+    }
+  }
+}
+
+// Generate wallet and show private key
+generateWalletBtn.onclick = () => {
+  const wallet = ethers.Wallet.createRandom();
+  generatedPrivateKey.value = wallet.privateKey;
+  saveNewWalletBtn.disabled = false;
+};
+
+// Save generated wallet and connect
+saveNewWalletBtn.onclick = () => {
+  try {
+    currentWallet = new ethers.Wallet(generatedPrivateKey.value.trim());
+    connectWallet(currentWallet, networkSelect.value);
+  } catch (e) {
+    alert('Invalid private key');
+  }
+};
+
+// Import wallet from private key input
+importWalletBtn.onclick = () => {
+  try {
+    currentWallet = new ethers.Wallet(importPrivateKeyInput.value.trim());
+    connectWallet(currentWallet, networkSelect.value);
+  } catch (e) {
+    alert('Invalid private key');
+  }
+};
+
+// Connect wallet to provider and show dashboard
+function connectWallet(wallet, rpcUrl) {
+  provider = new ethers.JsonRpcProvider(rpcUrl);
+  signer = wallet.connect(provider);
+  updateWalletUI();
+  showScreen('wallet');
+  generateQRCode(wallet.address);
+  fetchBalance();
+  loadTxHistory();
+}
+
+// Update wallet UI info
+function updateWalletUI() {
+  walletAddress.textContent = 'Address: ' + currentWallet.address;
+  walletBalance.textContent = 'Balance: Loading...';
+}
+
+// Fetch and display balance
+async function fetchBalance() {
+  try {
+    const balance = await provider.getBalance(currentWallet.address);
+    walletBalance.textContent = 'Balance: ' + ethers.formatEther(balance) + ' ETH';
+  } catch {
+    walletBalance.textContent = 'Balance: Error';
+  }
+}
+
+// Generate QR code for address
+function generateQRCode(address) {
+  qrcodeContainer.innerHTML = '';
+  qrCode = new QRCode(qrcodeContainer, {
+    text: address,
+    width: 180,
+    height: 180,
+    colorDark: "#00ff7f",
+    colorLight: "#001f0f",
+    correctLevel: QRCode.CorrectLevel.H,
+  });
+}
+
+// Clear QR code on logout
+function clearQRCode() {
+  qrcodeContainer.innerHTML = '';
+  qrCode = null;
+}
+
+// Send transaction (mocked: just alert + add to history)
+sendForm.onsubmit = async (e) => {
+  e.preventDefault();
+  const to = toAddressInput.value.trim();
+  const amount = amountInput.value.trim();
+  if (!ethers.isAddress(to)) {
+    alert('Invalid recipient address');
+    return;
+  }
+  if (isNaN(amount) || Number(amount) <= 0) {
+    alert('Invalid amount');
+    return;
+  }
+  try {
+    // Send transaction (real send)
+    const tx = await signer.sendTransaction({
+      to,
+      value: ethers.parseEther(amount)
+    });
+    alert('Transaction sent! Hash: ' + tx.hash);
+    addTxToHistory(tx.hash, to, amount);
+    toAddressInput.value = '';
+    amountInput.value = '';
+    fetchBalance();
+  } catch (err) {
+    alert('Transaction failed: ' + err.message);
+  }
+};
+
+// Add transaction to history list
+function addTxToHistory(hash, to, amount) {
+  const li = document.createElement('li');
+  li.textContent = `To: ${to} | Amount: ${amount} ETH | Tx: ${hash}`;
+  txHistory.prepend(li);
+}
+
+// Load mock tx history (empty on start)
+function loadTxHistory() {
+  txHistory.innerHTML = '';
+}
+
+// Change network
+networkSelect.onchange = () => {
+  if (!currentWallet) return;
+  connectWallet(currentWallet, networkSelect.value);
+};
+
+// Logout wallet
+logoutBtn.onclick = () => {
+  currentWallet = null;
+  provider = null;
+  signer = null;
+  clearQRCode();
+  generatedPrivateKey.value = '';
+  importPrivateKeyInput.value = '';
+  toAddressInput.value = '';
+  amountInput.value = '';
+  txHistory.innerHTML = '';
+  showScreen('home');
+};
+
+// Initialize app on load
+function init() {
+  showScreen('loading');
+  // Simulate loading delay
+  setTimeout(() => {
+    showScreen('home');
+  }, 1200);
+}
+
+init();
+
+// Navigation buttons
+  btnCreateWallet.onclick = () => showScreen('create');
+  btnImportWallet.onclick = () => showScreen('import');
+  backFromCreate.onclick = () => showScreen('home');
+  backFromImport.onclick = () => showScreen('home');
+
+  // Handle create wallet
+  btnGenerateWallet.onclick = async () => {
+    const wallet = ethers.Wallet.createRandom();
+    currentWallet = wallet;
+    displayWallet(wallet);
+    saveWallet(wallet);
+    showScreen('dashboard');
+  };
+
+  // Handle import wallet
+  btnDoImport.onclick = async () => {
+    const privateKey = importPrivateKey.value.trim();
+    try {
+      const wallet = new ethers.Wallet(privateKey);
+      currentWallet = wallet;
+      displayWallet(wallet);
+      saveWallet(wallet);
+      showScreen('dashboard');
+    } catch (error) {
+      alert('Invalid private key');
+    }
+  };
+
+  // Handle send transaction (mocked)
+  sendForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const to = sendTo.value.trim();
+    const amount = sendAmount.value.trim();
+    alert(`Mock sending ${amount} ETH to ${to}`);
+  };
+
+  // Display wallet info
+  function displayWallet(wallet) {
+    walletAddress.textContent = wallet.address;
+    privateKeyDisplay.textContent = wallet.privateKey;
+    generateQRCode(wallet.address);
+  }
+
+  // Save wallet locally (simple localStorage for now)
+  function saveWallet(wallet) {
+    localStorage.setItem('wallet', JSON.stringify({
+      address: wallet.address,
+      privateKey: wallet.privateKey
+    }));
+  }
+
+  // Load wallet if exists
+  function loadWallet() {
+    const data = localStorage.getItem('wallet');
+    if (data) {
+      try {
+        const parsed = JSON.parse(data);
+        const wallet = new ethers.Wallet(parsed.privateKey);
+        currentWallet = wallet;
+        displayWallet(wallet);
+        showScreen('dashboard');
+      } catch (e) {
+        console.error('Failed to load wallet');
+      }
+    }
+  }
+
+  // QR Code generator
+  function generateQRCode(address) {
+    qrcodeContainer.innerHTML = '';
+    new QRCode(qrcodeContainer, {
+      text: address,
+      width: 128,
+      height: 128
+    });
+  }
+
+  // Initialize app
+  function init() {
+    showScreen('home');
+    loadWallet();
+  }
+
+  init();
+
+  </script>
+</body>
+</html>
+
+})();
